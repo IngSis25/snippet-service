@@ -4,6 +4,37 @@ plugins {
 	id 'org.springframework.boot' version '3.5.6'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'org.jetbrains.kotlin.plugin.jpa' version '1.9.25'
+
+    id 'jacoco'
+    id "org.jlleitschuh.gradle.ktlint" version "12.1.1"
+}
+
+jacoco {
+    toolVersion = '0.8.11'
+}
+
+tasks.withType(Test).configureEach{
+    finalizedBy(tasks.named('jacocoTestReport'))
+}
+
+tasks.named('jacocoTestReport'){
+    dependsOn(tasks.named('test'))
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+}
+tasks.named('jacocoTestCoverageVerification'){
+    dependsOn(tasks.named('test'))
+    violationRules {
+        rule {
+            limit { minimum = 0.80 }
+        }
+    }
+}
+tasks.named('check'){
+    dependsOn(tasks.named('jacocoTestCoverageVerification'))
 }
 
 group = 'printscript'
@@ -30,6 +61,8 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    testImplementation 'com.h2database:h2' //para testing
 }
 
 kotlin {
@@ -46,4 +79,8 @@ allOpen {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.named('check') {
+    dependsOn(tasks.named('ktlintCheck'))
 }
