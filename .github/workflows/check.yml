@@ -9,7 +9,7 @@ name: Java CI with Gradle
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
 
 jobs:
   build:
@@ -44,3 +44,31 @@ jobs:
     #
     # - name: Build with Gradle 8.9
     #   run: gradle build
+
+  docker-publish:
+    name: Build and Publish Docker Image  # ← Nueva parte: Docker CD
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ github.token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE=ghcr.io/${{ github.repository_owner }}/snippet-service
+          if [[ $GITHUB_REF == refs/heads/main ]]; then
+            TAG=prod
+          else
+            TAG=dev
+          fi
+          echo "🚀 Building image: $IMAGE:$TAG"
+          docker build -t $IMAGE:$TAG .
+          docker push $IMAGE:$TAG
