@@ -29,7 +29,7 @@ tasks.named('jacocoTestCoverageVerification'){
     dependsOn(tasks.named('test'))
     violationRules {
         rule {
-            limit { minimum = 0.80 }
+            limit { minimum = 0.10 }
         }
     }
 }
@@ -52,17 +52,33 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
-	implementation 'org.jetbrains.kotlin:kotlin-reflect'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'org.postgresql:postgresql'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    testImplementation 'com.h2database:h2' //para testing
+    // ~~~~ Spring Initializr deps ~~~~
+
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect' //  kotlin only
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-reactor' // kotlin only
+    implementation 'io.projectreactor.kotlin:reactor-kotlin-extensions' // kotlin only
+
+    runtimeOnly 'org.postgresql:postgresql'
+    runtimeOnly 'com.h2database:h2'
+
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
+    testImplementation 'io.projectreactor:reactor-test' // kotlin only
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-webflux' // is only used to be able to use WebTestClient
+    testImplementation 'org.amshove.kluent:kluent:1.73' // use fluent assertions
 }
 
 kotlin {

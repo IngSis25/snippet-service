@@ -1,4 +1,4 @@
-package printscript.snippet_service
+package printscript.snippetService
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class SnippetServiceApplication
 
 fun main(args: Array<String>) {
-	runApplication<SnippetServiceApplication>(*args)
+    runApplication<SnippetServiceApplication>(*args)
 }

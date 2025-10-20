@@ -1,0 +1,28 @@
+services:
+  api:
+    container_name: "snippet-service"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8080
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+
+  db:
+    container_name: postgres_db
+    image: postgres:16
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
