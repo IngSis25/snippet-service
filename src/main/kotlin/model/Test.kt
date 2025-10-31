@@ -20,21 +20,18 @@ data class Test(
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     val id: Long = 0,
     val name: String = "",
-
     @ElementCollection
     @CollectionTable(name = "test_input", joinColumns = [JoinColumn(name = "test_id")])
     @Column(name = "input_value")
     val input: List<String> = listOf(),
-
     @ElementCollection
     @CollectionTable(name = "test_output", joinColumns = [JoinColumn(name = "test_id")])
     @Column(name = "output_value")
     val output: List<String> = listOf(),
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "snippet_id", nullable = false)
     @JsonBackReference
-    val snippet: Snippet
+    val snippet: Snippet,
 ) {
     constructor() : this(0, "", listOf(), listOf(), Snippet())
 }

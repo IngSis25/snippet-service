@@ -18,30 +18,24 @@ import jakarta.persistence.Table
 
 @Entity
 @Table(name = "snippets")
-data  class Snippet (
+data class Snippet(
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     val id: Long = 0,
     val name: String,
     val owner: String,
-
-
     @Lob // grandes cantidades de texto
     @Column(columnDefinition = "TEXT", nullable = false)
     var content: String,
-
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "language_id", nullable = false)
     @JsonBackReference
     val language: Language,
-
     @OneToMany(mappedBy = "snippet", cascade = [CascadeType.ALL], orphanRemoval = true)
     @JsonManagedReference
     @JsonIgnore
-    val tests:List<Test> = emptyList(),
-
+    val tests: List<Test> = emptyList(),
 ) {
     constructor() : this(0, "", "", "", Language(), emptyList())
-
 }
 // prueba docker images

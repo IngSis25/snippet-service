@@ -17,10 +17,9 @@ data class Language(
     val id: Long = 0,
     val name: String,
     val version: String,
-
     @OneToMany(mappedBy = "language", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     @JsonManagedReference
-    val snippets: List<Snippet> = emptyList()
+    val snippets: List<Snippet> = emptyList(),
 ) {
     constructor() : this(0, "", "", emptyList())
 
