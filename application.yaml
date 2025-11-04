@@ -12,3 +12,7 @@ spring:
     generate-ddl: true
     hibernate:
       ddl-auto: update
+
+  asset:
+    service:
+      url: http://asset-service:8080
