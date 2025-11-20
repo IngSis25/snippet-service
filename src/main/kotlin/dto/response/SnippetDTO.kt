@@ -12,4 +12,3 @@ open class SnippetDTO(snippet: Snippet) {
     val compliance: Compliance = snippet.status
     val version: String = snippet.language.version
 }
-

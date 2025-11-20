@@ -8,4 +8,3 @@ class TestDTO(test: Test) {
     val input: List<String> = test.input
     val output: List<String> = test.output
 }
-

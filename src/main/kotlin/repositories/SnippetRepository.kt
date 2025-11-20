@@ -8,7 +8,10 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface SnippetRepository : JpaRepository<Snippet, Long> {
-    fun findByNameContainingIgnoreCase(name: String, pageable: Pageable): Page<Snippet>
+    fun findByNameContainingIgnoreCase(
+        name: String,
+        pageable: Pageable,
+    ): Page<Snippet>
+
     fun countByNameContainingIgnoreCase(name: String): Long
 }
-

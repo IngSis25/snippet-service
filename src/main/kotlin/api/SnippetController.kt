@@ -5,8 +5,6 @@ import dto.request.ShareRequest
 import dto.request.SnippetRequest
 import dto.response.FullSnippet
 import model.Compliance
-import service.AuthorizationServiceClient
-import service.SnippetService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,12 +16,14 @@ import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import service.AuthorizationServiceClient
+import service.SnippetService
 
 @RestController
 @RequestMapping("/api/snippets")
 class SnippetController(
     private val snippetService: SnippetService,
-    private val authorizationServiceClient: AuthorizationServiceClient
+    private val authorizationServiceClient: AuthorizationServiceClient,
 ) {
     @GetMapping("/user")
     fun getSnippetsOfUser(
@@ -34,17 +34,26 @@ class SnippetController(
         @RequestParam(required = false) roles: List<String>? = null,
         @RequestParam(required = false) languages: List<Long>? = null,
         @RequestParam(required = false) compliance: List<Compliance>? = null,
-        @RequestHeader("Authorization") token: String
+        @RequestHeader("Authorization") token: String,
     ): ResponseEntity<Map<String, Any>> {
         val snippetsIds = authorizationServiceClient.getSnippetsOfUser(token, userId)
-        val (snippets, totalCount) = snippetService.getFilteredSnippets(
-            page, pageSize, snippetsIds, snippetName, roles, languages, compliance
-        )
+        val (snippets, totalCount) =
+            snippetService.getFilteredSnippets(
+                page,
+                pageSize,
+                snippetsIds,
+                snippetName,
+                roles,
+                languages,
+                compliance,
+            )
         return ResponseEntity.ok(mapOf("snippets" to snippets, "count" to totalCount))
     }
 
     @GetMapping("/{id}")
-    fun get(@PathVariable id: Long): ResponseEntity<FullSnippet> {
+    fun get(
+        @PathVariable id: Long,
+    ): ResponseEntity<FullSnippet> {
         val fullSnippet = snippetService.get(id)
         return ResponseEntity.ok(fullSnippet)
     }
@@ -52,15 +61,16 @@ class SnippetController(
     @PostMapping("/")
     fun create(
         @RequestBody snippetRequest: SnippetRequest,
-        @RequestHeader("Authorization") token: String
+        @RequestHeader("Authorization") token: String,
     ): ResponseEntity<FullSnippet> {
-        val fullSnippet = snippetService.create(
-            snippetRequest.name,
-            snippetRequest.content,
-            snippetRequest.languageId,
-            snippetRequest.owner,
-            token
-        )
+        val fullSnippet =
+            snippetService.create(
+                snippetRequest.name,
+                snippetRequest.content,
+                snippetRequest.languageId,
+                snippetRequest.owner,
+                token,
+            )
         return ResponseEntity.ok(fullSnippet)
     }
 
@@ -68,14 +78,16 @@ class SnippetController(
     fun update(
         @PathVariable id: Long,
         @RequestBody req: ContentRequest,
-        @RequestHeader("Authorization") token: String
+        @RequestHeader("Authorization") token: String,
     ): ResponseEntity<FullSnippet> {
         val response = snippetService.update(id, req.content, token)
         return ResponseEntity.ok(response)
     }
 
     @PostMapping("/delete/{id}")
-    fun delete(@PathVariable id: Long): ResponseEntity<Void> {
+    fun delete(
+        @PathVariable id: Long,
+    ): ResponseEntity<Void> {
         snippetService.delete("snippets", id)
         return ResponseEntity.noContent().build()
     }
@@ -84,16 +96,17 @@ class SnippetController(
     fun share(
         @RequestHeader("Authorization") token: String,
         @PathVariable id: Long,
-        @RequestBody emails: ShareRequest
+        @RequestBody emails: ShareRequest,
     ): ResponseEntity<FullSnippet> {
-        val snippet = try {
-            snippetService.get(id)
-        } catch (e: Exception) {
-            return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .header("Share-Status", "Snippet not found while trying to share it")
-                .body(FullSnippet())
-        }
+        val snippet =
+            try {
+                snippetService.get(id)
+            } catch (e: Exception) {
+                return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .header("Share-Status", "Snippet not found while trying to share it")
+                    .body(FullSnippet())
+            }
 
         return authorizationServiceClient.shareSnippet(token, id, emails.fromEmail, emails.toEmail, snippet)
     }
@@ -102,7 +115,7 @@ class SnippetController(
     fun format(
         @RequestHeader("Authorization") token: String,
         @PathVariable id: Long,
-        @RequestBody body: Map<String, String>
+        @RequestBody body: Map<String, String>,
     ): ResponseEntity<String> {
         val content = body["content"] ?: return ResponseEntity.badRequest().body("Content field is required.")
         snippetService.format(id, content, token)
@@ -112,7 +125,7 @@ class SnippetController(
     @PutMapping("/{id}/status")
     fun updateStatus(
         @PathVariable id: Long,
-        @RequestBody status: Compliance
+        @RequestBody status: Compliance,
     ): ResponseEntity<Void> {
         try {
             snippetService.updateStatus(id, status)
@@ -124,20 +137,24 @@ class SnippetController(
     }
 
     @GetMapping("/{id}/download")
-    fun downloadSnippet(@PathVariable id: Long): ResponseEntity<Map<String, String>> {
+    fun downloadSnippet(
+        @PathVariable id: Long,
+    ): ResponseEntity<Map<String, String>> {
         val snippet = snippetService.get(id)
         return ResponseEntity.ok(
             mapOf(
                 "name" to snippet.name,
                 "content" to snippet.content,
                 "language" to snippet.language,
-                "version" to snippet.version
-            )
+                "version" to snippet.version,
+            ),
         )
     }
 
     @GetMapping("/{id}/download/formatted")
-    fun downloadFormattedSnippet(@PathVariable id: Long): ResponseEntity<Map<String, String>> {
+    fun downloadFormattedSnippet(
+        @PathVariable id: Long,
+    ): ResponseEntity<Map<String, String>> {
         // Por ahora devuelve el mismo contenido, el formateo se hace en runner-service
         // y debería actualizarse en el snippet cuando runner-service termine
         val snippet = snippetService.get(id)
@@ -146,9 +163,8 @@ class SnippetController(
                 "name" to snippet.name,
                 "content" to snippet.content,
                 "language" to snippet.language,
-                "version" to snippet.version
-            )
+                "version" to snippet.version,
+            ),
         )
     }
 }
-

@@ -7,6 +7,5 @@ data class TestMessage(
     val version: String,
     val jwtToken: String,
     val inputs: List<String>? = null,
-    val outputs: List<String>? = null
+    val outputs: List<String>? = null,
 )
-

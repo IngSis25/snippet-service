@@ -21,10 +21,14 @@ import org.springframework.web.client.RestTemplate
 @Service
 class AuthorizationServiceClient(
     private val restTemplate: RestTemplate,
-    @Value("\${spring.authorization.service.url}") private val authorizationServiceUrl: String
+    @Value("\${spring.authorization.service.url}") private val authorizationServiceUrl: String,
 ) : AuthorizationServiceClientRoutes {
-
-    override fun addSnippetToUser(token: String, email: String, snippetId: Long, role: String) {
+    override fun addSnippetToUser(
+        token: String,
+        email: String,
+        snippetId: Long,
+        role: String,
+    ) {
         val body: Map<String, Any> = mapOf("snippetId" to snippetId, "role" to role)
 
         val headers = getJsonAuthorizedHeaders(token)
@@ -33,7 +37,11 @@ class AuthorizationServiceClient(
         executePost(entity, "/add-snippet/$email")
     }
 
-    override fun checkIfOwner(snippetId: Long, email: String, token: String): Boolean {
+    override fun checkIfOwner(
+        snippetId: Long,
+        email: String,
+        token: String,
+    ): Boolean {
         val body: Map<String, Any> = mapOf("snippetId" to snippetId, "email" to email)
         val entity = HttpEntity(body, getJsonAuthorizedHeaders(token))
 
@@ -46,16 +54,20 @@ class AuthorizationServiceClient(
         }
     }
 
-    override fun getSnippetsOfUser(token: String, userId: String): List<SnippetUserDto> {
+    override fun getSnippetsOfUser(
+        token: String,
+        userId: String,
+    ): List<SnippetUserDto> {
         val body = mapOf("userId" to userId)
         val entity = HttpEntity(body, getJsonAuthorizedHeaders(token))
         return try {
-            val response = restTemplate.exchange(
-                "$authorizationServiceUrl/user/get-user-snippets/$userId",
-                HttpMethod.GET,
-                entity,
-                object : ParameterizedTypeReference<List<SnippetUserDto>>() {}
-            )
+            val response =
+                restTemplate.exchange(
+                    "$authorizationServiceUrl/user/get-user-snippets/$userId",
+                    HttpMethod.GET,
+                    entity,
+                    object : ParameterizedTypeReference<List<SnippetUserDto>>() {},
+                )
             response.body ?: emptyList()
         } catch (e: Exception) {
             println("Error getting snippets of user: ${e.message}")
@@ -68,7 +80,7 @@ class AuthorizationServiceClient(
         snippetId: Long,
         fromEmail: String,
         toEmail: String,
-        snippet: FullSnippet
+        snippet: FullSnippet,
     ): ResponseEntity<FullSnippet> {
         if (fromEmail == toEmail) {
             return ResponseEntity
@@ -93,17 +105,18 @@ class AuthorizationServiceClient(
 
     override fun validate(token: String): ResponseEntity<Long> {
         return try {
-            val headers = HttpHeaders().apply {
-                contentType = MediaType.APPLICATION_JSON
-                set("Authorization", token)
-            }
+            val headers =
+                HttpHeaders().apply {
+                    contentType = MediaType.APPLICATION_JSON
+                    set("Authorization", token)
+                }
             val entity = HttpEntity<Void>(headers)
 
             restTemplate.exchange(
                 "$authorizationServiceUrl/user/validate",
                 HttpMethod.GET,
                 entity,
-                Long::class.java
+                Long::class.java,
             )
         } catch (e: Exception) {
             print("VALIDATE -> Error validating token: $e")
@@ -118,12 +131,14 @@ class AuthorizationServiceClient(
         }
     }
 
-    private fun executePost(entity: HttpEntity<Map<String, Any>>, string: String): String? {
+    private fun executePost(
+        entity: HttpEntity<Map<String, Any>>,
+        string: String,
+    ): String? {
         return restTemplate.postForObject(
             "$authorizationServiceUrl/user$string",
             entity,
-            String::class.java
+            String::class.java,
         )
     }
 }
-

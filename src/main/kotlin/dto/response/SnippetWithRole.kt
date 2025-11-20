@@ -14,4 +14,3 @@ class SnippetWithRole(snippet: Snippet, val role: String) {
 
     constructor() : this(Snippet(), "Default")
 }
-

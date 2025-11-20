@@ -23,16 +23,14 @@ data class Snippet(
     val name: String,
     val owner: String,
     var status: Compliance = Compliance.PENDING,
-
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "language_id", nullable = false)
     @JsonBackReference
     val language: Language,
-
     @OneToMany(mappedBy = "snippet", cascade = [CascadeType.ALL], orphanRemoval = true)
     @JsonManagedReference
     @JsonIgnore
-    val tests: List<Test> = emptyList()
+    val tests: List<Test> = emptyList(),
 ) {
     constructor() : this(0, "", "", Compliance.PENDING, Language(), emptyList())
 

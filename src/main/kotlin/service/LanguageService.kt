@@ -2,12 +2,12 @@ package service
 
 import errors.LanguageNotFound
 import model.Language
-import repositories.LanguageRepository
 import org.springframework.stereotype.Service
+import repositories.LanguageRepository
 
 @Service
 class LanguageService(
-    private val languageRepository: LanguageRepository
+    private val languageRepository: LanguageRepository,
 ) {
     fun getAll(): List<Language> {
         return languageRepository.findAll()
@@ -25,4 +25,3 @@ class LanguageService(
             .orElseThrow { LanguageNotFound("Language not found when trying to get it") }
     }
 }
-

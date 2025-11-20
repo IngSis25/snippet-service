@@ -15,4 +15,3 @@ class FullSnippet(snippet: Snippet, val content: String, val errors: List<String
     constructor() : this(Snippet(), "", emptyList())
     constructor(snippet: Snippet, content: String) : this(snippet, content, emptyList())
 }
-

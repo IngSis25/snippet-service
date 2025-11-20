@@ -1,18 +1,18 @@
 package api
 
 import model.Language
-import service.LanguageService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import service.LanguageService
 
 @RestController
 @RequestMapping("/api/languages")
 class LanguageController(
-    private val languageService: LanguageService
+    private val languageService: LanguageService,
 ) {
     @GetMapping("/all")
     fun getAll(): ResponseEntity<List<Language>> {
@@ -21,9 +21,10 @@ class LanguageController(
     }
 
     @PostMapping("/")
-    fun create(@RequestBody language: Language): ResponseEntity<Language> {
+    fun create(
+        @RequestBody language: Language,
+    ): ResponseEntity<Language> {
         val createdLanguage = languageService.create(language)
         return ResponseEntity.ok(createdLanguage)
     }
 }
-

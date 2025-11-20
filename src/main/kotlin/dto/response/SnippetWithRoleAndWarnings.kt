@@ -6,7 +6,7 @@ import model.Snippet
 class SnippetWithRoleAndWarnings(
     val snippet: Snippet,
     val role: String,
-    private val warnings: List<String>
+    private val warnings: List<String>,
 ) {
     val id: Long = snippet.id
     val name: String = snippet.name
@@ -19,4 +19,3 @@ class SnippetWithRoleAndWarnings(
 
     constructor() : this(Snippet(), "Default", emptyList())
 }
-
