@@ -1,5 +1,7 @@
 package service
 
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import config.SnippetMessage
 import config.TestMessage
 import dto.response.FullSnippet
@@ -17,6 +19,7 @@ import repositories.SnippetRepository
 class SnippetService(
     private val snippetRepository: SnippetRepository,
     @Lazy private val authorizationServiceClient: AuthorizationServiceClient,
+    private val assetService: AssetService,
     private val languageService: LanguageService,
     private val runnerServiceProducer: RunnerServiceProducer,
     @Lazy private val testService: service.TestService
@@ -24,8 +27,9 @@ class SnippetService(
 
     override fun create(name: String, content: String, languageId: String, owner: String, token: String): FullSnippet {
         val language = languageService.getLanguageById(languageId.toLongOrNull())
-        val snippet = Snippet(name = name, language = language, owner = owner, content = content)
+        val snippet = Snippet(name = name, language = language, owner = owner)
         snippetRepository.save(snippet)
+        assetService.put("snippets", snippet.id, content)
         authorizationServiceClient.addSnippetToUser(token, owner, snippet.id, "Owner")
         
         // Publicar mensaje en Redis para que runner-service valide el snippet
@@ -47,11 +51,30 @@ class SnippetService(
     override fun get(id: Long): FullSnippet {
         val snippet = snippetRepository.findById(id)
             .orElseThrow { SnippetNotFound("Snippet not found when trying to get it") }
-        
-        // Por ahora los warnings están vacíos, se pueden agregar como campo en Snippet si es necesario
-        val warnings = emptyList<String>()
+        val content = assetService.get("snippets", id)
 
-        return FullSnippet(snippet, snippet.content, warnings)
+        val warningsJson: String = try {
+            if (assetService.exists("lint-warnings", snippet.id)) {
+                assetService.get("lint-warnings", snippet.id)
+            } else {
+                ""
+            }
+        } catch (e: Exception) {
+            println("Error fetching warnings for snippet ${snippet.id}: ${e.message}")
+            ""
+        }
+
+        val warnings = try {
+            jacksonObjectMapper().readValue<List<String>>(
+                warningsJson,
+                object : TypeReference<List<String>>() {}
+            )
+        } catch (e: Exception) {
+            println("Error deserializing warnings for snippet ${snippet.id}: ${e.message}")
+            emptyList<String>()
+        }
+
+        return FullSnippet(snippet, content, warnings)
     }
 
     fun getFilteredSnippets(
@@ -74,8 +97,26 @@ class SnippetService(
         val snippets = snippetRepository.findAllById(filteredSnippetIdToRoleMap.keys)
 
         val snippetsWithWarnings = snippets.map { snippet ->
-            // Por ahora los warnings están vacíos, se pueden agregar como campo en Snippet si es necesario
-            val warnings = emptyList<String>()
+            val warningsJson: String = try {
+                if (assetService.exists("lint-warnings", snippet.id)) {
+                    assetService.get("lint-warnings", snippet.id)
+                } else {
+                    ""
+                }
+            } catch (e: Exception) {
+                println("Error fetching warnings for snippet ${snippet.id}: ${e.message}")
+                ""
+            }
+
+            val warnings = try {
+                jacksonObjectMapper().readValue<List<String>>(
+                    warningsJson,
+                    object : TypeReference<List<String>>() {}
+                )
+            } catch (e: Exception) {
+                println("Error deserializing warnings for snippet ${snippet.id}: ${e.message}")
+                emptyList<String>()
+            }
 
             SnippetWithRoleAndWarnings(
                 snippet = snippet,
@@ -109,8 +150,7 @@ class SnippetService(
     override fun update(id: Long, content: String, token: String): FullSnippet {
         checkIfExists(id, "edit")
         val snippet = snippetRepository.findById(id).get()
-        snippet.content = content
-        snippetRepository.save(snippet)
+        assetService.put("snippets", id, content)
         
         // Publicar mensaje en Redis para que runner-service valide el snippet actualizado
         val userId = authorizationServiceClient.validate(token).body ?: 0L
@@ -154,6 +194,7 @@ class SnippetService(
     override fun delete(directory: String, id: Long) {
         checkIfExists(id, "delete")
         snippetRepository.deleteById(id)
+        assetService.delete(directory, id)
     }
 
     override fun checkIfExists(id: Long, operation: String) {
@@ -178,7 +219,7 @@ class SnippetService(
         println("HIT snippet service: snippet $id status was updated to $status")
 
         val updatedSnippet = snippetRepository.save(snippet)
-        return FullSnippet(updatedSnippet, updatedSnippet.content)
+        return FullSnippet(updatedSnippet, assetService.get("snippets", id))
     }
 
     fun format(id: Long, content: String, token: String) {

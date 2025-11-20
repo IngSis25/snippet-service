@@ -23,9 +23,6 @@ data class Snippet(
     val name: String,
     val owner: String,
     var status: Compliance = Compliance.PENDING,
-    
-    @jakarta.persistence.Column(columnDefinition = "TEXT")
-    var content: String = "",
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "language_id", nullable = false)
@@ -37,7 +34,7 @@ data class Snippet(
     @JsonIgnore
     val tests: List<Test> = emptyList()
 ) {
-    constructor() : this(0, "", "", Compliance.PENDING, "", Language(), emptyList())
+    constructor() : this(0, "", "", Compliance.PENDING, Language(), emptyList())
 
     override fun toString(): String {
         return "Snippet(id=$id, name='$name', owner='$owner', status=$status)"
