@@ -49,6 +49,15 @@ java {
 
 repositories {
 	mavenCentral()
+	
+	maven {
+		name = "GitHubPackagesAustral"
+		url = uri("https://maven.pkg.github.com/austral-ingsis/class-redis-streams")
+		credentials {
+			username = project.findProperty("github.user") ?: System.getenv("GITHUB_ACTOR")
+			password = project.findProperty("github.token") ?: System.getenv("GITHUB_TOKEN")
+		}
+	}
 }
 
 dependencies {
@@ -79,6 +88,11 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-webflux' // is only used to be able to use WebTestClient
     testImplementation 'org.amshove.kluent:kluent:1.73' // use fluent assertions
+
+    // Redis Streams
+    implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation 'org.austral.ingsis:redis-streams-flux:0.1.13'
 }
 
 kotlin {

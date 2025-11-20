@@ -1,4 +1,7 @@
 spring:
+  application:
+    name: snippet-service
+
   datasource:
     url: jdbc:postgresql://postgres_db:5432/snippet-serviceDB
     driver-class-name: org.postgresql.Driver
@@ -13,6 +16,17 @@ spring:
     hibernate:
       ddl-auto: update
 
-  asset:
+  authorization:
     service:
-      url: http://asset-service:8080/v1/asset
+      url: http://authorization-service:8080/api
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+server:
+  port: 8080
+
+stream:
+  runner:
+    key: runnerStream
