@@ -1,6 +1,7 @@
 package service
 
 import config.SnippetMessage
+import config.TestMessage
 import dto.response.FullSnippet
 import dto.response.SnippetUserDto
 import dto.response.SnippetWithRoleAndWarnings
@@ -17,7 +18,8 @@ class SnippetService(
     private val snippetRepository: SnippetRepository,
     @Lazy private val authorizationServiceClient: AuthorizationServiceClient,
     private val languageService: LanguageService,
-    private val runnerServiceProducer: RunnerServiceProducer
+    private val runnerServiceProducer: RunnerServiceProducer,
+    @Lazy private val testService: service.TestService
 ) : SnippetServiceRoutes {
 
     override fun create(name: String, content: String, languageId: String, owner: String, token: String): FullSnippet {
@@ -121,6 +123,29 @@ class SnippetService(
                     jwtToken = token
                 )
             )
+        }
+        
+        // User Story #16: Testing automático - publicar mensaje para ejecutar todos los tests
+        try {
+            val tests = testService.getTestsBySnippetId(snippet.id)
+            tests.forEach { test ->
+                runBlocking {
+                    runnerServiceProducer.publishEvent(
+                        TestMessage(
+                            testId = test.id,
+                            snippetId = snippet.id,
+                            userId = userId,
+                            version = snippet.language.version,
+                            jwtToken = token,
+                            inputs = test.input,
+                            outputs = test.output
+                        )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            // Si no hay tests o hay error, continuar sin problemas
+            println("No se pudieron ejecutar tests automáticamente: ${e.message}")
         }
         
         return FullSnippet(snippet, content)

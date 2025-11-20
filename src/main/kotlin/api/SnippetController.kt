@@ -122,5 +122,33 @@ class SnippetController(
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
         }
     }
+
+    @GetMapping("/{id}/download")
+    fun downloadSnippet(@PathVariable id: Long): ResponseEntity<Map<String, String>> {
+        val snippet = snippetService.get(id)
+        return ResponseEntity.ok(
+            mapOf(
+                "name" to snippet.name,
+                "content" to snippet.content,
+                "language" to snippet.language,
+                "version" to snippet.version
+            )
+        )
+    }
+
+    @GetMapping("/{id}/download/formatted")
+    fun downloadFormattedSnippet(@PathVariable id: Long): ResponseEntity<Map<String, String>> {
+        // Por ahora devuelve el mismo contenido, el formateo se hace en runner-service
+        // y debería actualizarse en el snippet cuando runner-service termine
+        val snippet = snippetService.get(id)
+        return ResponseEntity.ok(
+            mapOf(
+                "name" to snippet.name,
+                "content" to snippet.content,
+                "language" to snippet.language,
+                "version" to snippet.version
+            )
+        )
+    }
 }
 
