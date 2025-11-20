@@ -15,4 +15,4 @@ spring:
 
   asset:
     service:
-      url: http://asset-service:8080
+      url: http://asset-service:8080/v1/asset
