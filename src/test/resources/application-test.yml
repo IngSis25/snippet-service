@@ -14,13 +14,11 @@ spring:
       host: localhost
       port: 6379
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://dummy
-          client-id: dummy-client-id
-          client-secret: dummy-client-secret
+  # Deshabilitar seguridad en tests
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.oauth2.resourceserver.OAuth2ResourceServerAutoConfiguration
 
   asset:
     service:

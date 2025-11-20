@@ -29,7 +29,7 @@ tasks.named('jacocoTestCoverageVerification'){
     dependsOn(tasks.named('test'))
     violationRules {
         rule {
-            limit { minimum = 0.0 }
+            limit { minimum = 0.4 }
         }
     }
 }
@@ -79,6 +79,7 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-webflux' // is only used to be able to use WebTestClient
     testImplementation 'org.amshove.kluent:kluent:1.73' // use fluent assertions
+    testImplementation 'org.mockito.kotlin:mockito-kotlin:4.1.0' // mockito for kotlin
 
     // Redis Streams
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
