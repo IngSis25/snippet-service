@@ -1,11 +1,11 @@
 package service
 
-import config.SnippetMessage
-import dto.response.SnippetUserDto
-import errors.SnippetNotFound
-import model.Compliance
-import model.Language
-import model.Snippet
+import snippets.config.SnippetMessage
+import snippets.dto.response.SnippetUserDto
+import snippets.errors.SnippetNotFound
+import snippets.model.Compliance
+import snippets.model.Language
+import snippets.model.Snippet
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -18,7 +18,13 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.http.ResponseEntity
-import repositories.SnippetRepository
+import snippets.repositories.SnippetRepository
+import snippets.service.AssetService
+import snippets.service.AuthorizationServiceClient
+import snippets.service.LanguageService
+import snippets.service.RunnerServiceProducer
+import snippets.service.SnippetService
+import snippets.service.TestService
 import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
@@ -39,7 +45,7 @@ class SnippetServiceTest {
     private lateinit var runnerServiceProducer: RunnerServiceProducer
 
     @Mock
-    private lateinit var testService: service.TestService
+    private lateinit var testService: TestService
 
     @InjectMocks
     private lateinit var snippetService: SnippetService

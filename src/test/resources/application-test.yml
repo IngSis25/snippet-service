@@ -27,9 +27,6 @@ spring:
     service:
       url: http://localhost:8080/api
 
-auth0:
-  audience: dummy-audience
-
 stream:
   runner:
     key: runnerStream

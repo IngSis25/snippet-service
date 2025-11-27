@@ -1,4 +1,9 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: "runner-redis"
+    ports:
+      - "6379:6379"
   api:
     container_name: "snippet-service"
     build:
@@ -13,8 +18,45 @@ services:
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
 
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+
+      AUTH_SERVER_URI: ${AUTH_SERVER_URI}
+      AUTH_CLIENT_ID: ${AUTH_CLIENT_ID}
+      AUTH_AUDIENCE: ${AUTH_AUDIENCE}
+
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${AUTH_SERVER_URI}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "https://${AUTH_SERVER_URI}/.well-known/jwks.json"
+
+    depends_on:
+      - redis
+
+  asset-service:
+    container_name: "asset_service-1"
+    image: ghcr.io/austral-ingsis/snippet-asset-service:latest
+    ports:
+      - "8081:8080"
+    environment:
+      AZURE_HOST: "http://azurite"
+      NEW_RELIC_APP_NAME: "asset-service"
+      NEW_RELIC_AGENT_ENABLED: false
+    depends_on:
+      - azurite
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: "azurite-1"
+    hostname: azurite
+    restart: always
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    volumes:
+      - blob:/workspace
+
   db:
-    container_name: postgres_db
+    container_name: postgres_db2
     image: postgres:16
     ports:
       - 5433:5432
@@ -25,4 +67,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 volumes:
-  pgdata:
+    pgdata:
+        driver: local
+    blob:
+      external: false

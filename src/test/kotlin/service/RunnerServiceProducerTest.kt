@@ -1,7 +1,7 @@
 package service
 
-import config.SnippetMessage
-import config.TestMessage
+import snippets.config.SnippetMessage
+import snippets.config.TestMessage
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -13,6 +13,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.data.redis.connection.stream.MapRecord
 import org.springframework.data.redis.core.StreamOperations
 import org.springframework.data.redis.core.StringRedisTemplate
+import snippets.service.RedisRunnerServiceProducer
 
 @ExtendWith(MockitoExtension::class)
 class RunnerServiceProducerTest {

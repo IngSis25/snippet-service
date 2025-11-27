@@ -1,10 +1,10 @@
 package service
 
-import dto.response.FullSnippet
-import dto.response.SnippetUserDto
-import model.Compliance
-import model.Language
-import model.Snippet
+import snippets.dto.response.FullSnippet
+import snippets.dto.response.SnippetUserDto
+import snippets.model.Compliance
+import snippets.model.Language
+import snippets.model.Snippet
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -17,6 +17,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.client.RestTemplate
+import snippets.service.AuthorizationServiceClient
 
 @ExtendWith(MockitoExtension::class)
 class AuthorizationServiceClientTest {

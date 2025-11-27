@@ -1,11 +1,11 @@
 package service
 
-import config.TestMessage
-import errors.SnippetNotFound
-import errors.TestNotFound
-import model.Compliance
-import model.Language
-import model.Snippet
+import snippets.config.TestMessage
+import snippets.errors.SnippetNotFound
+import snippets.errors.TestNotFound
+import snippets.model.Compliance
+import snippets.model.Language
+import snippets.model.Snippet
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -18,10 +18,12 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import repositories.SnippetRepository
-import repositories.TestRepository
+import snippets.repositories.SnippetRepository
+import snippets.repositories.TestRepository
+import snippets.service.RunnerServiceProducer
+import snippets.service.TestService
 import java.util.Optional
-import model.Test as TestModel
+import snippets.model.Test as TestModel
 
 @ExtendWith(MockitoExtension::class)
 class TestServiceTest {

@@ -1,7 +1,7 @@
 package service
 
-import errors.LanguageNotFound
-import model.Language
+import snippets.errors.LanguageNotFound
+import snippets.model.Language
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -10,7 +10,8 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import repositories.LanguageRepository
+import snippets.repositories.LanguageRepository
+import snippets.service.LanguageService
 import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
