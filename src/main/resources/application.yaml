@@ -28,9 +28,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${AUTH_SERVER_URI:}
-          client-id: ${AUTH_CLIENT_ID:}
-          client-secret: ${AUTH_CLIENT_SECRET:}
+          issuer-uri: ${AUTH_SERVER_URI}
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -45,4 +43,4 @@ stream:
 
 # Configuración de Auth0
 auth0:
-  audience: ${AUTH0_AUDIENCE:}
+  audience: ${AUTH0_AUDIENCE}

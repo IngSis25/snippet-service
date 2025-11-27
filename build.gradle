@@ -85,11 +85,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
-//    // OAuth2 Resource Server (para validar JWT de Auth0)
-//    implementation 'org.springframework.boot:spring-boot-starter-security'
-//    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
-//    implementation 'org.springframework.security:spring-security-oauth2-jose' // JWT decoding and validation
-//    testImplementation 'org.springframework.security:spring-security-test'
+    // OAuth2 Resource Server (para validar JWT de Auth0)
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    testImplementation 'org.springframework.security:spring-security-test'
 }
 
 kotlin {
