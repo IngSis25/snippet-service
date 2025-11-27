@@ -25,14 +25,14 @@ tasks.named('jacocoTestReport'){
         csv.required.set(false)
     }
 }
-tasks.named('jacocoTestCoverageVerification'){
-    dependsOn(tasks.named('test'))
-    violationRules {
-        rule {
-            limit { minimum = 0.4 }
-        }
-    }
-}
+       tasks.named('jacocoTestCoverageVerification'){
+           dependsOn(tasks.named('test'))
+           violationRules {
+               rule {
+                   limit { minimum = 0.8 }
+               }
+           }
+       }
 tasks.named('check'){
     dependsOn(tasks.named('jacocoTestCoverageVerification'))
 }

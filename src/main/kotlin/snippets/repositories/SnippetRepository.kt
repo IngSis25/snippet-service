@@ -1,10 +1,10 @@
 package snippets.repositories
 
-import snippets.model.Snippet
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
+import snippets.model.Snippet
 
 @Repository
 interface SnippetRepository : JpaRepository<Snippet, Long> {

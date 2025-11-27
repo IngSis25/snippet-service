@@ -1,8 +1,8 @@
 package snippets.service
 
+import org.springframework.stereotype.Service
 import snippets.errors.LanguageNotFound
 import snippets.model.Language
-import org.springframework.stereotype.Service
 import snippets.repositories.LanguageRepository
 
 @Service

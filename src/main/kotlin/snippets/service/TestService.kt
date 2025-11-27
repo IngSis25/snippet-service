@@ -1,11 +1,11 @@
 package snippets.service
 
+import org.springframework.stereotype.Service
 import snippets.config.TestMessage
 import snippets.dto.response.TestDTO
 import snippets.errors.SnippetNotFound
 import snippets.errors.TestNotFound
 import snippets.model.Test
-import org.springframework.stereotype.Service
 import snippets.repositories.SnippetRepository
 import snippets.repositories.TestRepository
 

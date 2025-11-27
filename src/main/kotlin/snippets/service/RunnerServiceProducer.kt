@@ -1,12 +1,12 @@
 package snippets.service
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import snippets.config.SnippetMessage
-import snippets.config.TestMessage
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.connection.stream.MapRecord
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Service
+import snippets.config.SnippetMessage
+import snippets.config.TestMessage
 
 interface RunnerServiceProducer {
     fun publishSnippetEvent(snippetMessage: SnippetMessage)

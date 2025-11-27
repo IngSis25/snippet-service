@@ -1,11 +1,5 @@
 package service
 
-import snippets.config.TestMessage
-import snippets.errors.SnippetNotFound
-import snippets.errors.TestNotFound
-import snippets.model.Compliance
-import snippets.model.Language
-import snippets.model.Snippet
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -18,6 +12,12 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import snippets.config.TestMessage
+import snippets.errors.SnippetNotFound
+import snippets.errors.TestNotFound
+import snippets.model.Compliance
+import snippets.model.Language
+import snippets.model.Snippet
 import snippets.repositories.SnippetRepository
 import snippets.repositories.TestRepository
 import snippets.service.RunnerServiceProducer

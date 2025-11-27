@@ -1,8 +1,8 @@
 package snippets.service
 
+import org.springframework.http.ResponseEntity
 import snippets.dto.response.FullSnippet
 import snippets.dto.response.SnippetUserDto
-import org.springframework.http.ResponseEntity
 
 /**
  * Interfaz para el cliente HTTP del authorization-service.

@@ -1,8 +1,10 @@
 package snippets.security
 
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
 import org.springframework.security.config.Customizer.withDefaults
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -16,9 +18,14 @@ import org.springframework.security.web.SecurityFilterChain
 
 @Configuration
 @EnableWebSecurity
+@Profile("!test")
+@ConditionalOnProperty(
+    name = ["spring.security.oauth2.resourceserver.jwt.issuer-uri"],
+    matchIfMissing = false,
+)
 class OAuth2ResourceServerSecurityConfiguration(
-    @Value("\${auth0.audience}") val audience: String,
-    @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri}") val issuer: String,
+    @Value("\${auth0.audience:}") val audience: String,
+    @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri:}") val issuer: String,
 ) {
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
@@ -39,6 +46,8 @@ class OAuth2ResourceServerSecurityConfiguration(
 
     @Bean
     fun jwtDecoder(): JwtDecoder {
+        require(issuer.isNotBlank()) { "Issuer URI must not be blank" }
+        require(audience.isNotBlank()) { "Audience must not be blank" }
         val jwtDecoder = NimbusJwtDecoder.withIssuerLocation(issuer).build()
         val audienceValidator: OAuth2TokenValidator<Jwt> = AudienceValidator(audience)
         val withIssuer: OAuth2TokenValidator<Jwt> = JwtValidators.createDefaultWithIssuer(issuer)

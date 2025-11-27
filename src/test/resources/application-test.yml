@@ -30,3 +30,6 @@ spring:
 stream:
   runner:
     key: runnerStream
+
+# Configuración de Auth0 para tests - NO configuramos estas propiedades
+# para que la configuración de seguridad no se cargue

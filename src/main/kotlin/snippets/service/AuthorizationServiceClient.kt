@@ -1,7 +1,5 @@
 package snippets.service
 
-import snippets.dto.response.FullSnippet
-import snippets.dto.response.SnippetUserDto
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpEntity
@@ -13,6 +11,8 @@ import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import org.springframework.util.MultiValueMap
 import org.springframework.web.client.RestTemplate
+import snippets.dto.response.FullSnippet
+import snippets.dto.response.SnippetUserDto
 
 /**
  * Cliente HTTP para comunicarse con el authorization-service.

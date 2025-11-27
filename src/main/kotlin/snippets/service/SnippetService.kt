@@ -2,6 +2,8 @@ package snippets.service
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.springframework.context.annotation.Lazy
+import org.springframework.stereotype.Service
 import snippets.config.SnippetMessage
 import snippets.config.TestMessage
 import snippets.dto.response.FullSnippet
@@ -10,8 +12,6 @@ import snippets.dto.response.SnippetWithRoleAndWarnings
 import snippets.errors.SnippetNotFound
 import snippets.model.Compliance
 import snippets.model.Snippet
-import org.springframework.context.annotation.Lazy
-import org.springframework.stereotype.Service
 import snippets.repositories.SnippetRepository
 import kotlin.collections.forEach
 

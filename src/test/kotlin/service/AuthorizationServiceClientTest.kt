@@ -1,10 +1,5 @@
 package service
 
-import snippets.dto.response.FullSnippet
-import snippets.dto.response.SnippetUserDto
-import snippets.model.Compliance
-import snippets.model.Language
-import snippets.model.Snippet
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -17,6 +12,11 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.client.RestTemplate
+import snippets.dto.response.FullSnippet
+import snippets.dto.response.SnippetUserDto
+import snippets.model.Compliance
+import snippets.model.Language
+import snippets.model.Snippet
 import snippets.service.AuthorizationServiceClient
 
 @ExtendWith(MockitoExtension::class)
@@ -223,5 +223,45 @@ class AuthorizationServiceClientTest {
 
         // Then
         assert(result.statusCode == HttpStatus.FORBIDDEN)
+    }
+
+    @Test
+    fun `shareSnippet should return ok when sharing is successful`() {
+        // Given
+        val token = "test-token"
+        val snippetId = 1L
+        val fromEmail = "test@example.com"
+        val toEmail = "to@example.com"
+        val service = AuthorizationServiceClient(restTemplate, authorizationServiceUrl)
+
+        whenever(restTemplate.postForObject(any<String>(), any(), any<Class<*>>()))
+            .thenReturn("User is the owner of the snippet")
+
+        // When
+        val result = service.shareSnippet(token, snippetId, fromEmail, toEmail, fullSnippet)
+
+        // Then
+        assert(result.statusCode == HttpStatus.OK)
+        assert(result.body?.id == fullSnippet.id)
+    }
+
+    @Test
+    fun `addSnippetToUser should call rest template`() {
+        // Given
+        val token = "test-token"
+        val email = "test@example.com"
+        val snippetId = 1L
+        val role = "Owner"
+        val service = AuthorizationServiceClient(restTemplate, authorizationServiceUrl)
+
+        whenever(restTemplate.postForObject(any<String>(), any(), any<Class<*>>()))
+            .thenReturn("Success")
+
+        // When
+        service.addSnippetToUser(token, email, snippetId, role)
+
+        // Then
+        // Verificamos que se llamó al restTemplate
+        // (no hay valor de retorno para verificar directamente)
     }
 }

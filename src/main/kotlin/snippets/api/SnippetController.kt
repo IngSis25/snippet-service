@@ -1,13 +1,7 @@
 package snippets.api
 
-import snippets.dto.request.ContentRequest
-import snippets.dto.request.ShareRequest
-import snippets.dto.request.SnippetRequest
-import snippets.dto.response.FullSnippet
-import snippets.model.Compliance
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -17,7 +11,12 @@ import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import snippets.dto.request.ContentRequest
+import snippets.dto.request.ShareRequest
+import snippets.dto.request.SnippetRequest
+import snippets.dto.response.FullSnippet
 import snippets.errors.LanguageNotFound
+import snippets.model.Compliance
 import snippets.service.AuthorizationServiceClient
 import snippets.service.LanguageService
 import snippets.service.SnippetService
@@ -68,25 +67,29 @@ class SnippetController(
         @RequestHeader("Authorization") token: String,
     ): ResponseEntity<FullSnippet> {
         println("Creating snippet: $snippetRequest")
-        
+
         // Resolver languageId si no viene directamente
-        val languageId = snippetRequest.languageId ?: run {
-            val language = when {
-                !snippetRequest.language.isNullOrBlank() -> {
-                    languageService.getLanguageByName(snippetRequest.language)
-                        ?: throw LanguageNotFound("Language with name '${snippetRequest.language}' not found")
-                }
-                !snippetRequest.extension.isNullOrBlank() -> {
-                    languageService.getLanguageByExtension(snippetRequest.extension)
-                        ?: throw LanguageNotFound("Language with extension '${snippetRequest.extension}' not found")
-                }
-                else -> {
-                    throw LanguageNotFound("Either languageId, language, or extension must be provided")
-                }
+        val languageId =
+            snippetRequest.languageId ?: run {
+                val language =
+                    when {
+                        !snippetRequest.language.isNullOrBlank() -> {
+                            languageService.getLanguageByName(snippetRequest.language)
+                                ?: throw LanguageNotFound("Language with name '${snippetRequest.language}' not found")
+                        }
+                        !snippetRequest.extension.isNullOrBlank() -> {
+                            languageService.getLanguageByExtension(snippetRequest.extension)
+                                ?: throw LanguageNotFound(
+                                    "Language with extension '${snippetRequest.extension}' not found",
+                                )
+                        }
+                        else -> {
+                            throw LanguageNotFound("Either languageId, language, or extension must be provided")
+                        }
+                    }
+                language.id.toString()
             }
-            language.id.toString()
-        }
-        
+
         val fullSnippet =
             snippetService.create(
                 snippetRequest.name,
