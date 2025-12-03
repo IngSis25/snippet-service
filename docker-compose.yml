@@ -6,6 +6,7 @@ services:
       - "6379:6379"
     networks:
       - printscript-net
+
   api:
     container_name: "snippet-service"
     build:
@@ -21,11 +22,13 @@ services:
       AUTH_CLIENT_ID: ${AUTH_CLIENT_ID}
       AUTH_AUDIENCE: ${AUTH_AUDIENCE}
 
+      # Config de DB (ESTE servicio)
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
+      DB_NAME: snippet-serviceDB
+      DB_HOST: postgres_db
+      DB_PORT: 5432
+
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
     depends_on:
@@ -62,24 +65,27 @@ services:
     networks:
       - printscript-net
 
+  # ÚNICO Postgres de todo el sistema
   db:
-    container_name: postgres_db2
+    container_name: postgres_db
     image: postgres:16
     ports:
       - 5433:5432
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_DB: snippet-serviceDB
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
       - printscript-net
+
 volumes:
-    pgdata:
-        driver: local
-    blob:
-      external: false
+  pgdata:
+    driver: local
+  blob:
+    external: false
+
 networks:
   printscript-net:
     external: true

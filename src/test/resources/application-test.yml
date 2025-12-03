@@ -25,7 +25,7 @@ spring:
       url: http://localhost:8080/v1/asset
   authorization:
     service:
-      url: http://localhost:8080/api
+#      url: http://localhost:8080/api
 
 stream:
   runner:
