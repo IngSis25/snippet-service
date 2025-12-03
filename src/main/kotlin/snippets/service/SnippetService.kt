@@ -9,7 +9,6 @@ import snippets.config.TestMessage
 import snippets.dto.response.FullSnippet
 import snippets.dto.response.SnippetUserDto
 import snippets.dto.response.SnippetWithRoleAndWarnings
-import snippets.errors.LanguageNotFound
 import snippets.errors.SnippetNotFound
 import snippets.model.Compliance
 import snippets.model.Snippet

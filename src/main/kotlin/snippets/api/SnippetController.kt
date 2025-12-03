@@ -66,7 +66,6 @@ class SnippetController(
         @RequestBody snippetRequest: SnippetRequest,
         @RequestHeader("Authorization") token: String,
     ): ResponseEntity<FullSnippet> {
-
         println("===== SnippetController.create() =====")
         println("Request recibido: $snippetRequest")
 
@@ -114,7 +113,6 @@ class SnippetController(
 
         return ResponseEntity.ok(fullSnippet)
     }
-
 
     @PutMapping("/{id}")
     fun update(
