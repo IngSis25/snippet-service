@@ -11,8 +11,10 @@ import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import org.springframework.util.MultiValueMap
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.util.UriUtils
 import snippets.dto.response.FullSnippet
 import snippets.dto.response.SnippetUserDto
+import java.nio.charset.StandardCharsets
 
 /**
  * Cliente HTTP para comunicarse con el authorization-service.
@@ -34,7 +36,8 @@ class AuthorizationServiceClient(
         val headers = getJsonAuthorizedHeaders(token)
 
         val entity = HttpEntity(body, headers)
-        executePost(entity, "/add-snippet/$email")
+        val encodedEmail = UriUtils.encodePath(email, StandardCharsets.UTF_8)
+        executePost(entity, "/add-snippet/$encodedEmail")
     }
 
     override fun checkIfOwner(

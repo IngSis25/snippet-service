@@ -9,6 +9,7 @@ import snippets.config.TestMessage
 import snippets.dto.response.FullSnippet
 import snippets.dto.response.SnippetUserDto
 import snippets.dto.response.SnippetWithRoleAndWarnings
+import snippets.errors.LanguageNotFound
 import snippets.errors.SnippetNotFound
 import snippets.model.Compliance
 import snippets.model.Snippet
@@ -31,7 +32,8 @@ class SnippetService(
         owner: String,
         token: String,
     ): FullSnippet {
-        val language = languageService.getLanguageById(languageId.toLongOrNull())
+        val language =
+            languageService.getLanguageById(languageId.toLongOrNull())
         val snippet = Snippet(name = name, language = language, owner = owner)
         snippetRepository.save(snippet)
         assetService.put("snippets", snippet.id, content)
