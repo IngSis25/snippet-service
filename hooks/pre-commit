@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+./gradlew test
+./gradlew ktlintFormat
+./gradlew ktlintCheck
+
+if ! git diff --quiet; then
+  echo "⚠️ Se aplicaron cambios de formato. Agregalos con 'git add' y volvé a commitear."
+  exit 1
+fi

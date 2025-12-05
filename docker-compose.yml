@@ -4,6 +4,9 @@ services:
     container_name: "runner-redis"
     ports:
       - "6379:6379"
+    networks:
+      - printscript-net
+
   api:
     container_name: "snippet-service"
     build:
@@ -12,24 +15,27 @@ services:
     ports:
       - 8001:8080
     environment:
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
+      AUTH_SERVER_URI: https://dev-2dc74voarsscuyp0.us.auth0.com/
 
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${AUTH_SERVER_URI}
 
-      AUTH_SERVER_URI: ${AUTH_SERVER_URI}
       AUTH_CLIENT_ID: ${AUTH_CLIENT_ID}
       AUTH_AUDIENCE: ${AUTH_AUDIENCE}
 
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${AUTH_SERVER_URI}
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "https://${AUTH_SERVER_URI}/.well-known/jwks.json"
+      # Config de DB (ESTE servicio)
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: snippet-serviceDB
+      DB_HOST: postgres_db
+      DB_PORT: 5432
 
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     depends_on:
       - redis
+      - db
+    networks:
+      - printscript-net
 
   asset-service:
     container_name: "asset_service-1"
@@ -42,6 +48,8 @@ services:
       NEW_RELIC_AGENT_ENABLED: false
     depends_on:
       - azurite
+    networks:
+      - printscript-net
 
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
@@ -54,20 +62,30 @@ services:
       - "10002:10002"
     volumes:
       - blob:/workspace
+    networks:
+      - printscript-net
 
+  # ÚNICO Postgres de todo el sistema
   db:
-    container_name: postgres_db2
+    container_name: postgres_db
     image: postgres:16
     ports:
       - 5433:5432
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_DB: snippet-serviceDB
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - printscript-net
+
 volumes:
-    pgdata:
-        driver: local
-    blob:
-      external: false
+  pgdata:
+    driver: local
+  blob:
+    external: false
+
+networks:
+  printscript-net:
+    external: true

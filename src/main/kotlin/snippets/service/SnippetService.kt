@@ -31,7 +31,8 @@ class SnippetService(
         owner: String,
         token: String,
     ): FullSnippet {
-        val language = languageService.getLanguageById(languageId.toLongOrNull())
+        val language =
+            languageService.getLanguageById(languageId.toLongOrNull())
         val snippet = Snippet(name = name, language = language, owner = owner)
         snippetRepository.save(snippet)
         assetService.put("snippets", snippet.id, content)

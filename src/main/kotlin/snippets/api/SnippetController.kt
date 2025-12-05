@@ -66,18 +66,23 @@ class SnippetController(
         @RequestBody snippetRequest: SnippetRequest,
         @RequestHeader("Authorization") token: String,
     ): ResponseEntity<FullSnippet> {
-        println("Creating snippet: $snippetRequest")
+        println("===== SnippetController.create() =====")
+        println("Request recibido: $snippetRequest")
 
         // Resolver languageId si no viene directamente
         val languageId =
             snippetRequest.languageId ?: run {
+                println("languageId no vino en el request, intentando resolver por nombre o extensión...")
+
                 val language =
                     when {
                         !snippetRequest.language.isNullOrBlank() -> {
+                            println("Buscando lenguaje por nombre: '${snippetRequest.language}'")
                             languageService.getLanguageByName(snippetRequest.language)
                                 ?: throw LanguageNotFound("Language with name '${snippetRequest.language}' not found")
                         }
                         !snippetRequest.extension.isNullOrBlank() -> {
+                            println("Buscando lenguaje por extension: '${snippetRequest.extension}'")
                             languageService.getLanguageByExtension(snippetRequest.extension)
                                 ?: throw LanguageNotFound(
                                     "Language with extension '${snippetRequest.extension}' not found",
@@ -87,8 +92,13 @@ class SnippetController(
                             throw LanguageNotFound("Either languageId, language, or extension must be provided")
                         }
                     }
+
+                println("Lenguaje encontrado: id=${language.id}, name=${language.name}, ext=${language.extension}")
                 language.id.toString()
             }
+
+        println("languageId final resuelto = $languageId")
+        println("Llamando a SnippetService.create()...")
 
         val fullSnippet =
             snippetService.create(
@@ -98,6 +108,9 @@ class SnippetController(
                 snippetRequest.owner,
                 token,
             )
+
+        println("Snippet creado correctamente: id=${fullSnippet.id}")
+
         return ResponseEntity.ok(fullSnippet)
     }
 
