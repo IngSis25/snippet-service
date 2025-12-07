@@ -18,7 +18,12 @@ class AssetService(
                 "$assetServiceUrl/$directory/$id",
                 String::class.java,
             )
-        return response ?: throw Exception("Asset not found")
+
+        if (response.isNullOrBlank()) {
+            return "[]"
+        }
+
+        return response
     }
 
     override fun put(

@@ -170,4 +170,21 @@ class LanguageServiceTest {
         // Then
         result shouldBeEqualTo null
     }
+
+    @Test
+    fun `create should save and return language`() {
+        // Given
+        val newLanguage = Language(id = 0L, name = "NewLanguage", version = "1.0", extension = "nl")
+        val savedLanguage = newLanguage.copy(id = 2L)
+
+        whenever(languageRepository.save(newLanguage)).thenReturn(savedLanguage)
+
+        // When
+        val result = languageService.create(newLanguage)
+
+        // Then
+        result shouldBeEqualTo savedLanguage
+        result.id shouldBeEqualTo 2L
+        verify(languageRepository).save(newLanguage)
+    }
 }

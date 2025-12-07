@@ -162,7 +162,7 @@ class TestServiceTest {
         // Given
         val testId = 1L
         val token = "test-token"
-        val userId = 1L
+        val userId = "auth0|123"
 
         whenever(testRepository.findById(testId)).thenReturn(Optional.of(test))
 
@@ -179,7 +179,7 @@ class TestServiceTest {
         // Given
         val snippetId = 1L
         val token = "test-token"
-        val userId = 1L
+        val userId = "auth0|123"
         val tests = listOf(test, test.copy(id = 2L))
 
         whenever(snippetRepository.findById(snippetId)).thenReturn(Optional.of(snippet))
@@ -199,7 +199,7 @@ class TestServiceTest {
         // Given
         val snippetId = 999L
         val token = "test-token"
-        val userId = 1L
+        val userId = "auth0|123"
 
         whenever(snippetRepository.findById(snippetId)).thenReturn(Optional.empty())
 

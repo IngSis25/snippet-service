@@ -132,7 +132,7 @@ class TestControllerTest {
         // Given
         val testId = 1L
         val token = "test-token"
-        val userId = 1L
+        val userId = "auth0|123"
 
         whenever(authorizationServiceClient.validate(token)).thenReturn(ResponseEntity.ok(userId))
 
@@ -150,7 +150,7 @@ class TestControllerTest {
         // Given
         val snippetId = 1L
         val token = "test-token"
-        val userId = 1L
+        val userId = "auth0|123"
 
         whenever(authorizationServiceClient.validate(token)).thenReturn(ResponseEntity.ok(userId))
 

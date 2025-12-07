@@ -44,24 +44,6 @@ class AssetServiceTest {
     }
 
     @Test
-    fun `get should throw exception when asset not found`() {
-        // Given
-        val directory = "snippets"
-        val id = 1L
-
-        whenever(restTemplate.getForObject(any<String>(), any<Class<*>>()))
-            .thenReturn(null)
-
-        // When/Then
-        try {
-            assetService.get(directory, id)
-            org.junit.jupiter.api.Assertions.fail("Should have thrown Exception")
-        } catch (e: Exception) {
-            assert(e.message == "Asset not found")
-        }
-    }
-
-    @Test
     fun `put should update asset`() {
         // Given
         val directory = "snippets"

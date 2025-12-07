@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
@@ -18,12 +20,15 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import snippets.dto.request.ContentRequest
 import snippets.dto.request.ShareRequest
 import snippets.dto.request.SnippetRequest
 import snippets.dto.response.FullSnippet
+import snippets.dto.response.SnippetUserDto
+import snippets.dto.response.SnippetWithRoleAndWarnings
 import snippets.model.Compliance
 import snippets.model.Language
 import snippets.model.Snippet
@@ -340,5 +345,45 @@ class SnippetControllerTest {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.name").value("Test Snippet"))
             .andExpect(jsonPath("$.content").value("print('Hello')"))
+    }
+
+    @Test
+    fun `getSnippetsOfUser should return filtered snippets`() {
+        // Given
+        val token = "test-token"
+        val userId = "auth0|123"
+        val snippetsIds = listOf(SnippetUserDto(snippetId = 1L, role = "Owner"))
+        val snippets =
+            listOf(
+                SnippetWithRoleAndWarnings(
+                    snippet,
+                    "Owner",
+                    emptyList(),
+                ),
+            )
+
+        whenever(authorizationServiceClient.getSnippetsOfUser(token, userId)).thenReturn(snippetsIds)
+        doReturn(Pair(snippets, 1L)).whenever(snippetService).getFilteredSnippets(
+            any(),
+            any(),
+            any(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+        )
+
+        // When/Then
+        mockMvc.perform(
+            get("/api/snippets/user")
+                .param("page", "0")
+                .param("pageSize", "10")
+                .param("userId", userId)
+                .header("Authorization", token),
+        )
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.count").value(1L))
+            .andExpect(jsonPath("$.snippets").isArray)
     }
 }

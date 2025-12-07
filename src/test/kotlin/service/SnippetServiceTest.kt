@@ -282,7 +282,7 @@ class SnippetServiceTest {
         val snippetId = 1L
         val content = "print('Updated')"
         val token = "test-token"
-        val userId = 1L
+        val userId = "auth0|123"
 
         whenever(snippetRepository.existsById(snippetId)).thenReturn(true)
         whenever(snippetRepository.findById(snippetId)).thenReturn(Optional.of(snippet))
@@ -306,7 +306,7 @@ class SnippetServiceTest {
         val snippetId = 1L
         val content = "print('Hello')"
         val token = "test-token"
-        val userId = 1L
+        val userId = "auth0|123"
 
         whenever(snippetRepository.findById(snippetId)).thenReturn(Optional.of(snippet))
         whenever(assetService.get("snippets", snippetId)).thenReturn(content)
@@ -323,12 +323,30 @@ class SnippetServiceTest {
     }
 
     @Test
+    fun `format should not publish event when userId is null`() {
+        // Given
+        val snippetId = 1L
+        val content = "print('Hello')"
+        val token = "test-token"
+
+        whenever(authorizationServiceClient.validate(token))
+            .thenReturn(ResponseEntity.ok(null))
+
+        // When
+        snippetService.format(snippetId, content, token)
+
+        // Then
+        verify(authorizationServiceClient).validate(token)
+        verify(runnerServiceProducer, never()).publishSnippetEvent(any<SnippetMessage>())
+    }
+
+    @Test
     fun `update should publish test events when tests exist`() {
         // Given
         val snippetId = 1L
         val content = "print('Updated')"
         val token = "test-token"
-        val userId = 1L
+        val userId = "auth0|123"
         val test1 =
             TestModel(id = 1L, name = "Test 1", input = listOf("input1"), output = listOf("output1"), snippet = snippet)
         val test2 =
@@ -547,7 +565,7 @@ class SnippetServiceTest {
         val snippetId = 1L
         val content = "print('Updated')"
         val token = "test-token"
-        val userId = 1L
+        val userId = "auth0|123"
 
         whenever(snippetRepository.existsById(snippetId)).thenReturn(true)
         whenever(snippetRepository.findById(snippetId)).thenReturn(Optional.of(snippet))

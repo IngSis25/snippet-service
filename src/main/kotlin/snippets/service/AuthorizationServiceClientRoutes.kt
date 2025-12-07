@@ -37,5 +37,5 @@ interface AuthorizationServiceClientRoutes {
         snippet: FullSnippet,
     ): ResponseEntity<FullSnippet>
 
-    fun validate(token: String): ResponseEntity<Long>
+    fun validate(token: String): ResponseEntity<String>
 }
