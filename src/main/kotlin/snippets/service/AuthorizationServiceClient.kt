@@ -38,12 +38,21 @@ class AuthorizationServiceClient(
         snippetId: Long,
         role: String,
     ) {
-        val body: Map<String, Any> = mapOf("role" to role)
+        val body: Map<String, Any> =
+            mapOf(
+                "role" to role,
+                "email" to email,
+            )
         val headers = getJsonAuthorizedHeaders(token)
         val entity = HttpEntity(body, headers)
 
         // Ahora usamos snippetId en el path, no email
-        executePost(entity, "/add-snippet/$snippetId")
+        val result = executePost(entity, "/add-snippet/$snippetId")
+        if (result == null) {
+            println("ERROR: Failed to add snippet $snippetId to user $email with role $role")
+            throw RuntimeException("Failed to add snippet to user")
+        }
+        println("SUCCESS: Added snippet $snippetId to user $email with role $role. Response: $result")
     }
 
     /**
@@ -132,12 +141,19 @@ class AuthorizationServiceClient(
 
         // email del invitado se sigue usando solo como metadata, pero
         // la asociación real usuario-snippet se hace por token + auth0Id en el authorization-service
-        addSnippetToUser(token, toEmail, snippetId, "Guest")
-
-        return ResponseEntity
-            .status(HttpStatus.OK)
-            .header("Share-Status", "Snippet shared with $toEmail")
-            .body(snippet)
+        try {
+            addSnippetToUser(token, toEmail, snippetId, "Guest")
+            return ResponseEntity
+                .status(HttpStatus.OK)
+                .header("Share-Status", "Snippet shared with $toEmail")
+                .body(snippet)
+        } catch (e: Exception) {
+            println("ERROR sharing snippet $snippetId with $toEmail: ${e.message}")
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .header("Share-Status", "Failed to share snippet: ${e.message}")
+                .body(snippet)
+        }
     }
 
     override fun validate(token: String): ResponseEntity<String> {
@@ -180,10 +196,48 @@ class AuthorizationServiceClient(
                     entity,
                     String::class.java,
                 )
-            response.body
+            if (response.statusCode.is2xxSuccessful) {
+                println("POST to $path successful: ${response.body}")
+                response.body
+            } else {
+                println("POST to $path failed with status ${response.statusCode}: ${response.body}")
+                null
+            }
         } catch (e: Exception) {
             println("Error executing POST to $path: ${e.message}")
+            e.printStackTrace()
             null
         }
     }
+
+    fun searchUsers(
+        search: String,
+        token: String,
+    ): List<AuthUserDTO> {
+        if (search.isBlank()) return emptyList()
+
+        val url = "$authorizationServiceUrl/auth0/users?search=$search"
+
+        val headers =
+            HttpHeaders().apply {
+                set("Authorization", token)
+            }
+
+        val entity = HttpEntity<Void>(headers)
+
+        val response =
+            restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                object : ParameterizedTypeReference<List<AuthUserDTO>>() {},
+            )
+
+        return response.body ?: emptyList()
+    }
 }
+
+data class AuthUserDTO(
+    val id: String,
+    val email: String,
+)
