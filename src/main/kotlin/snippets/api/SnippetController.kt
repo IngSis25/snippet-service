@@ -56,9 +56,29 @@ class SnippetController(
     @GetMapping("/{id}")
     fun get(
         @PathVariable id: Long,
-    ): ResponseEntity<FullSnippet> {
+        @RequestHeader(value = "Authorization", required = false) token: String?,
+    ): ResponseEntity<Map<String, Any>> {
         val fullSnippet = snippetService.get(id)
-        return ResponseEntity.ok(fullSnippet)
+        val response =
+            mutableMapOf<String, Any>(
+                "id" to fullSnippet.id,
+                "name" to fullSnippet.name,
+                "owner" to fullSnippet.owner,
+                "language" to fullSnippet.language,
+                "extension" to fullSnippet.extension,
+                "status" to fullSnippet.status,
+                "version" to fullSnippet.version,
+                "content" to fullSnippet.content,
+                "errors" to fullSnippet.errors,
+            )
+
+        // Si hay token, agregar el rol del usuario
+        if (token != null) {
+            val userRole = authorizationServiceClient.getUserRoleForSnippet(token, id)
+            response["userRole"] = userRole ?: "none"
+        }
+
+        return ResponseEntity.ok(response)
     }
 
     @PostMapping
@@ -119,9 +139,18 @@ class SnippetController(
         @PathVariable id: Long,
         @RequestBody req: ContentRequest,
         @RequestHeader("Authorization") token: String,
-    ): ResponseEntity<FullSnippet> {
-        val response = snippetService.update(id, req.content, token)
-        return ResponseEntity.ok(response)
+    ): ResponseEntity<Any> {
+        try {
+            val response = snippetService.update(id, req.content, token)
+            return ResponseEntity.ok(response)
+        } catch (e: RuntimeException) {
+            if (e.message?.contains("permisos") == true || e.message?.contains("Viewer") == true) {
+                val errorMessage = e.message ?: "No tenés permisos para editar este snippet"
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(mapOf("message" to errorMessage))
+            }
+            throw e
+        }
     }
 
     @PostMapping("/delete/{id}")
@@ -136,7 +165,7 @@ class SnippetController(
     fun share(
         @RequestHeader("Authorization") token: String,
         @PathVariable id: Long,
-        @RequestBody emails: ShareRequest,
+        @RequestBody shareRequest: ShareRequest,
     ): ResponseEntity<FullSnippet> {
         val snippet =
             try {
@@ -148,7 +177,14 @@ class SnippetController(
                     .body(FullSnippet())
             }
 
-        return authorizationServiceClient.shareSnippet(token, id, emails.fromEmail, emails.toEmail, snippet)
+        return authorizationServiceClient.shareSnippet(
+            token,
+            id,
+            shareRequest.fromEmail,
+            shareRequest.toEmail,
+            snippet,
+            shareRequest.role,
+        )
     }
 
     @PostMapping("/format/{id}")
@@ -189,6 +225,23 @@ class SnippetController(
         }
     }
 
+    @PostMapping("/{id}/check-owner")
+    fun checkOwner(
+        @RequestHeader("Authorization") token: String,
+        @PathVariable id: Long,
+    ): ResponseEntity<String> {
+        try {
+            val isOwner = authorizationServiceClient.checkIfOwner(id, "", token)
+            return if (isOwner) {
+                ResponseEntity.ok("User is the owner of the snippet")
+            } else {
+                ResponseEntity.badRequest().body("User is not the owner of the snippet")
+            }
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
     @GetMapping("/{id}/download")
     fun downloadSnippet(
         @PathVariable id: Long,
@@ -219,5 +272,14 @@ class SnippetController(
                 "version" to snippet.version,
             ),
         )
+    }
+
+    /**
+     * Endpoint de prueba para testing de New Relic.
+     * Devuelve un error HTTP 500 para poder disparar alertas.
+     */
+    @GetMapping("/test-error")
+    fun testError(): ResponseEntity<Map<String, String>> {
+        throw RuntimeException("Error simulado para testing de New Relic - HTTP 500")
     }
 }

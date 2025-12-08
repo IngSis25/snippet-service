@@ -124,6 +124,7 @@ class AuthorizationServiceClient(
         fromEmail: String,
         toEmail: String,
         snippet: FullSnippet,
+        role: String,
     ): ResponseEntity<FullSnippet> {
         if (fromEmail == toEmail) {
             return ResponseEntity
@@ -142,7 +143,8 @@ class AuthorizationServiceClient(
         // email del invitado se sigue usando solo como metadata, pero
         // la asociación real usuario-snippet se hace por token + auth0Id en el authorization-service
         try {
-            addSnippetToUser(token, toEmail, snippetId, "Guest")
+            // Usar el role pasado como parámetro (Editor, Viewer, etc.)
+            addSnippetToUser(token, toEmail, snippetId, role)
             return ResponseEntity
                 .status(HttpStatus.OK)
                 .header("Share-Status", "Snippet shared with $toEmail")
@@ -174,6 +176,19 @@ class AuthorizationServiceClient(
         } catch (e: Exception) {
             print("VALIDATE -> Error validating token: $e")
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        }
+    }
+
+    override fun getUserRoleForSnippet(
+        token: String,
+        snippetId: Long,
+    ): String? {
+        return try {
+            val snippets = getSnippetsOfUser(token, "")
+            snippets.find { it.snippetId == snippetId }?.role
+        } catch (e: Exception) {
+            println("Error getting user role for snippet $snippetId: ${e.message}")
+            null
         }
     }
 

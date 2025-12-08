@@ -4,7 +4,6 @@ import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
@@ -13,6 +12,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.http.ResponseEntity
+import org.springframework.web.client.RestTemplate
 import snippets.config.SnippetMessage
 import snippets.dto.response.SnippetUserDto
 import snippets.errors.SnippetNotFound
@@ -49,7 +49,9 @@ class SnippetServiceTest {
     @Mock
     private lateinit var testService: TestService
 
-    @InjectMocks
+    @Mock
+    private lateinit var restTemplate: RestTemplate
+
     private lateinit var snippetService: SnippetService
 
     private lateinit var language: Language
@@ -57,6 +59,18 @@ class SnippetServiceTest {
 
     @BeforeEach
     fun setUp() {
+        // Crear el servicio manualmente con todos los parámetros necesarios
+        snippetService =
+            SnippetService(
+                snippetRepository,
+                authorizationServiceClient,
+                assetService,
+                languageService,
+                runnerServiceProducer,
+                testService,
+                restTemplate,
+                "http://localhost:8000",
+            )
         language = Language(id = 1L, name = "PrintScript", version = "1.0", extension = "ps")
         snippet =
             Snippet(
@@ -234,7 +248,7 @@ class SnippetServiceTest {
         val warningsJson = """["warning1", "warning2"]"""
 
         whenever(snippetRepository.findAllById(any())).thenAnswer { invocation ->
-            val ids = invocation.arguments[0] as Collection<Long>
+            val ids = invocation.arguments[0] as Collection<*>
             listOf(snippet).filter { it.id in ids }
         }
         whenever(assetService.exists("lint-warnings", snippet.id)).thenReturn(true)
@@ -262,7 +276,7 @@ class SnippetServiceTest {
         val snippet2 = snippet.copy(id = 2L)
 
         whenever(snippetRepository.findAllById(any())).thenAnswer { invocation ->
-            val ids = invocation.arguments[0] as Collection<Long>
+            val ids = invocation.arguments[0] as Collection<*>
             listOf(snippet1, snippet2).filter { it.id in ids }
         }
         whenever(assetService.exists("lint-warnings", snippet1.id)).thenReturn(false)
@@ -380,7 +394,7 @@ class SnippetServiceTest {
         val snippet2 = snippet.copy(id = 2L, name = "Other Snippet")
 
         whenever(snippetRepository.findAllById(any())).thenAnswer { invocation ->
-            val ids = invocation.arguments[0] as Collection<Long>
+            val ids = invocation.arguments[0] as Collection<*>
             listOf(snippet1, snippet2).filter { it.id in ids }
         }
         whenever(assetService.exists("lint-warnings", snippet1.id)).thenReturn(false)
@@ -409,7 +423,7 @@ class SnippetServiceTest {
         val snippet2 = snippet.copy(id = 2L, language = language2)
 
         whenever(snippetRepository.findAllById(any())).thenAnswer { invocation ->
-            val ids = invocation.arguments[0] as Collection<Long>
+            val ids = invocation.arguments[0] as Collection<*>
             listOf(snippet1, snippet2).filter { it.id in ids }
         }
         whenever(assetService.exists("lint-warnings", snippet1.id)).thenReturn(false)
@@ -437,7 +451,7 @@ class SnippetServiceTest {
         val snippet2 = snippet.copy(id = 2L, status = Compliance.PENDING)
 
         whenever(snippetRepository.findAllById(any())).thenAnswer { invocation ->
-            val ids = invocation.arguments[0] as Collection<Long>
+            val ids = invocation.arguments[0] as Collection<*>
             listOf(snippet1, snippet2).filter { it.id in ids }
         }
         whenever(assetService.exists("lint-warnings", snippet1.id)).thenReturn(false)
@@ -469,7 +483,7 @@ class SnippetServiceTest {
             )
 
         whenever(snippetRepository.findAllById(any())).thenAnswer { invocation ->
-            val ids = invocation.arguments[0] as Collection<Long>
+            val ids = invocation.arguments[0] as Collection<*>
             snippets.filter { it.id in ids }
         }
         whenever(assetService.exists("lint-warnings", snippet.id)).thenReturn(false)

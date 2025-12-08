@@ -32,6 +32,7 @@ class OAuth2ResourceServerSecurityConfiguration(
         http.authorizeHttpRequests {
             it
                 .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers("/api/snippets/test-error").permitAll() // Endpoint de prueba para New Relic
                 .anyRequest().authenticated()
         }
             .oauth2ResourceServer { it.jwt(withDefaults()) }

@@ -4,11 +4,11 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Lazy
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
-import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
 import snippets.config.SnippetMessage
@@ -177,6 +177,15 @@ class SnippetService(
         token: String,
     ): FullSnippet {
         checkIfExists(id, "edit")
+
+        // Verificar permisos de edición: Viewer no puede editar
+        val userRole = authorizationServiceClient.getUserRoleForSnippet(token, id)
+        if (userRole == "Viewer") {
+            throw RuntimeException(
+                "No tenés permisos para editar este snippet. Solo tenés permisos de lectura (Viewer).",
+            )
+        }
+
         val snippet = snippetRepository.findById(id).get()
         assetService.put("snippets", id, content)
 
