@@ -4,7 +4,6 @@ import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
@@ -13,6 +12,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.http.ResponseEntity
+import org.springframework.web.client.RestTemplate
 import snippets.config.SnippetMessage
 import snippets.dto.response.SnippetUserDto
 import snippets.errors.SnippetNotFound
@@ -49,7 +49,9 @@ class SnippetServiceTest {
     @Mock
     private lateinit var testService: TestService
 
-    @InjectMocks
+    @Mock
+    private lateinit var restTemplate: RestTemplate
+
     private lateinit var snippetService: SnippetService
 
     private lateinit var language: Language
@@ -57,6 +59,18 @@ class SnippetServiceTest {
 
     @BeforeEach
     fun setUp() {
+        // Crear el servicio manualmente con todos los parámetros necesarios
+        snippetService =
+            SnippetService(
+                snippetRepository,
+                authorizationServiceClient,
+                assetService,
+                languageService,
+                runnerServiceProducer,
+                testService,
+                restTemplate,
+                "http://localhost:8000",
+            )
         language = Language(id = 1L, name = "PrintScript", version = "1.0", extension = "ps")
         snippet =
             Snippet(

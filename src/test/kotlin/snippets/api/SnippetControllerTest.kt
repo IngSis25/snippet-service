@@ -320,6 +320,42 @@ class SnippetControllerTest {
     }
 
     @Test
+    fun `checkOwner should return ok when user is owner`() {
+        // Given
+        val snippetId = 1L
+        val token = "test-token"
+        whenever(authorizationServiceClient.checkIfOwner(any(), any(), any())).thenReturn(true)
+
+        // When/Then
+        mockMvc.perform(
+            post("/api/snippets/$snippetId/check-owner")
+                .header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"),
+        )
+            .andExpect(status().isOk)
+            .andExpect(content().string("User is the owner of the snippet"))
+    }
+
+    @Test
+    fun `checkOwner should return bad request when user is not owner`() {
+        // Given
+        val snippetId = 1L
+        val token = "test-token"
+        whenever(authorizationServiceClient.checkIfOwner(any(), any(), any())).thenReturn(false)
+
+        // When/Then
+        mockMvc.perform(
+            post("/api/snippets/$snippetId/check-owner")
+                .header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"),
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(content().string("User is not the owner of the snippet"))
+    }
+
+    @Test
     fun `downloadSnippet should return snippet data`() {
         // Given
         val snippetId = 1L

@@ -189,6 +189,23 @@ class SnippetController(
         }
     }
 
+    @PostMapping("/{id}/check-owner")
+    fun checkOwner(
+        @RequestHeader("Authorization") token: String,
+        @PathVariable id: Long,
+    ): ResponseEntity<String> {
+        try {
+            val isOwner = authorizationServiceClient.checkIfOwner(id, "", token)
+            return if (isOwner) {
+                ResponseEntity.ok("User is the owner of the snippet")
+            } else {
+                ResponseEntity.badRequest().body("User is not the owner of the snippet")
+            }
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
     @GetMapping("/{id}/download")
     fun downloadSnippet(
         @PathVariable id: Long,
