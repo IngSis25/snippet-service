@@ -231,7 +231,7 @@ class AuthorizationServiceClientTest {
         val service = AuthorizationServiceClient(restTemplate, authorizationServiceUrl)
 
         // When
-        val result = service.shareSnippet(token, snippetId, email, email, fullSnippet)
+        val result = service.shareSnippet(token, snippetId, email, email, fullSnippet, "editor")
 
         // Then
         assert(result.statusCode == HttpStatus.BAD_REQUEST)
@@ -256,7 +256,7 @@ class AuthorizationServiceClientTest {
         ).thenReturn(ResponseEntity.ok("User is not the owner"))
 
         // When
-        val result = service.shareSnippet(token, snippetId, fromEmail, toEmail, fullSnippet)
+        val result = service.shareSnippet(token, snippetId, fromEmail, toEmail, fullSnippet, "editor")
 
         // Then
         assert(result.statusCode == HttpStatus.FORBIDDEN)
@@ -282,7 +282,7 @@ class AuthorizationServiceClientTest {
         ).thenReturn(ResponseEntity.ok("User is the owner of the snippet"))
 
         // When
-        val result = service.shareSnippet(token, snippetId, fromEmail, toEmail, fullSnippet)
+        val result = service.shareSnippet(token, snippetId, fromEmail, toEmail, fullSnippet, "editor")
 
         // Then
         assert(result.statusCode == HttpStatus.OK)

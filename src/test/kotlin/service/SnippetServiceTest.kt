@@ -248,7 +248,7 @@ class SnippetServiceTest {
         val warningsJson = """["warning1", "warning2"]"""
 
         whenever(snippetRepository.findAllById(any())).thenAnswer { invocation ->
-            val ids = invocation.arguments[0] as Collection<Long>
+            val ids = invocation.arguments[0] as Collection<*>
             listOf(snippet).filter { it.id in ids }
         }
         whenever(assetService.exists("lint-warnings", snippet.id)).thenReturn(true)
@@ -276,7 +276,7 @@ class SnippetServiceTest {
         val snippet2 = snippet.copy(id = 2L)
 
         whenever(snippetRepository.findAllById(any())).thenAnswer { invocation ->
-            val ids = invocation.arguments[0] as Collection<Long>
+            val ids = invocation.arguments[0] as Collection<*>
             listOf(snippet1, snippet2).filter { it.id in ids }
         }
         whenever(assetService.exists("lint-warnings", snippet1.id)).thenReturn(false)
@@ -394,7 +394,7 @@ class SnippetServiceTest {
         val snippet2 = snippet.copy(id = 2L, name = "Other Snippet")
 
         whenever(snippetRepository.findAllById(any())).thenAnswer { invocation ->
-            val ids = invocation.arguments[0] as Collection<Long>
+            val ids = invocation.arguments[0] as Collection<*>
             listOf(snippet1, snippet2).filter { it.id in ids }
         }
         whenever(assetService.exists("lint-warnings", snippet1.id)).thenReturn(false)
@@ -423,7 +423,7 @@ class SnippetServiceTest {
         val snippet2 = snippet.copy(id = 2L, language = language2)
 
         whenever(snippetRepository.findAllById(any())).thenAnswer { invocation ->
-            val ids = invocation.arguments[0] as Collection<Long>
+            val ids = invocation.arguments[0] as Collection<*>
             listOf(snippet1, snippet2).filter { it.id in ids }
         }
         whenever(assetService.exists("lint-warnings", snippet1.id)).thenReturn(false)
@@ -451,7 +451,7 @@ class SnippetServiceTest {
         val snippet2 = snippet.copy(id = 2L, status = Compliance.PENDING)
 
         whenever(snippetRepository.findAllById(any())).thenAnswer { invocation ->
-            val ids = invocation.arguments[0] as Collection<Long>
+            val ids = invocation.arguments[0] as Collection<*>
             listOf(snippet1, snippet2).filter { it.id in ids }
         }
         whenever(assetService.exists("lint-warnings", snippet1.id)).thenReturn(false)
@@ -483,7 +483,7 @@ class SnippetServiceTest {
             )
 
         whenever(snippetRepository.findAllById(any())).thenAnswer { invocation ->
-            val ids = invocation.arguments[0] as Collection<Long>
+            val ids = invocation.arguments[0] as Collection<*>
             snippets.filter { it.id in ids }
         }
         whenever(assetService.exists("lint-warnings", snippet.id)).thenReturn(false)

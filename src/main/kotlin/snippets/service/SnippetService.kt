@@ -177,6 +177,15 @@ class SnippetService(
         token: String,
     ): FullSnippet {
         checkIfExists(id, "edit")
+
+        // Verificar permisos de edición: Viewer no puede editar
+        val userRole = authorizationServiceClient.getUserRoleForSnippet(token, id)
+        if (userRole == "Viewer") {
+            throw RuntimeException(
+                "No tenés permisos para editar este snippet. Solo tenés permisos de lectura (Viewer).",
+            )
+        }
+
         val snippet = snippetRepository.findById(id).get()
         assetService.put("snippets", id, content)
 
