@@ -2,8 +2,15 @@ package snippets.service
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Lazy
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
+import org.springframework.http.MediaType
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Service
+import org.springframework.web.client.RestTemplate
 import snippets.config.SnippetMessage
 import snippets.config.TestMessage
 import snippets.dto.response.FullSnippet
@@ -23,6 +30,8 @@ class SnippetService(
     private val languageService: LanguageService,
     private val runnerServiceProducer: RunnerServiceProducer,
     @Lazy private val testService: TestService,
+    private val restTemplate: RestTemplate,
+    @Value("\${runner.service.url}") private val runnerServiceUrl: String,
 ) : SnippetServiceRoutes {
     override fun create(
         name: String,
@@ -247,6 +256,39 @@ class SnippetService(
 
         val updatedSnippet = snippetRepository.save(snippet)
         return FullSnippet(updatedSnippet, assetService.get("snippets", id))
+    }
+
+    fun runSnippet(
+        id: Long,
+        inputs: List<String>,
+        token: String,
+    ): List<String> {
+        val snippet = get(id)
+
+        val headers =
+            HttpHeaders().apply {
+                contentType = MediaType.APPLICATION_JSON
+                set("Authorization", token)
+            }
+
+        val body =
+            mapOf(
+                "version" to snippet.version,
+                "code" to snippet.content,
+            )
+
+        val entity: HttpEntity<Map<String, Any>> = HttpEntity(body, headers)
+        val url = "$runnerServiceUrl/api/printscript/interpret"
+
+        val response =
+            restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                object : ParameterizedTypeReference<List<String>>() {},
+            )
+
+        return response.body ?: emptyList()
     }
 
     fun format(

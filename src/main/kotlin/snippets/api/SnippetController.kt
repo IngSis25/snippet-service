@@ -162,6 +162,19 @@ class SnippetController(
         return ResponseEntity.ok("Format request published to runner-service")
     }
 
+    @PostMapping("/{id}/run")
+    fun runSnippet(
+        @RequestHeader("Authorization") token: String,
+        @PathVariable id: Long,
+        @RequestBody(required = false) body: Map<String, Any>?,
+    ): ResponseEntity<List<String>> {
+        val inputs =
+            (body?.get("inputs") as? List<*>)?.filterIsInstance<String>()
+                ?: emptyList()
+        val outputs = snippetService.runSnippet(id, inputs, token)
+        return ResponseEntity.ok(outputs)
+    }
+
     @PutMapping("/{id}/status")
     fun updateStatus(
         @PathVariable id: Long,
