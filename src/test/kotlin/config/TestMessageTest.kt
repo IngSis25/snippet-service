@@ -9,7 +9,7 @@ class TestMessageTest {
         // Given
         val testId = 1L
         val snippetId = 2L
-        val userId = 3L
+        val userId = "auth0|123"
         val version = "1.0"
         val jwtToken = "test-token"
         val inputs = listOf("input1", "input2")

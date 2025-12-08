@@ -36,7 +36,7 @@ class RunnerServiceProducerTest {
         val snippetMessage =
             SnippetMessage(
                 snippetId = 1L,
-                userId = 1L,
+                userId = "auth0|123",
                 version = "1.0",
                 jwtToken = "test-token",
             )
@@ -57,7 +57,7 @@ class RunnerServiceProducerTest {
             TestMessage(
                 testId = 1L,
                 snippetId = 1L,
-                userId = 1L,
+                userId = "auth0|123",
                 version = "1.0",
                 jwtToken = "test-token",
                 inputs = listOf("input1"),

@@ -2,8 +2,15 @@ package snippets.service
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Lazy
+import org.springframework.core.ParameterizedTypeReference
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
+import org.springframework.web.client.RestTemplate
 import snippets.config.SnippetMessage
 import snippets.config.TestMessage
 import snippets.dto.response.FullSnippet
@@ -23,6 +30,8 @@ class SnippetService(
     private val languageService: LanguageService,
     private val runnerServiceProducer: RunnerServiceProducer,
     @Lazy private val testService: TestService,
+    private val restTemplate: RestTemplate,
+    @Value("\${runner.service.url}") private val runnerServiceUrl: String,
 ) : SnippetServiceRoutes {
     override fun create(
         name: String,
@@ -39,15 +48,17 @@ class SnippetService(
         authorizationServiceClient.addSnippetToUser(token, owner, snippet.id, "Owner")
 
         // Publicar mensaje en Redis para que runner-service valide el snippet
-        val userId = authorizationServiceClient.validate(token).body ?: 0L
-        runnerServiceProducer.publishSnippetEvent(
-            SnippetMessage(
-                snippetId = snippet.id,
-                userId = userId,
-                version = snippet.language.version,
-                jwtToken = token,
-            ),
-        )
+        val userId = authorizationServiceClient.validate(token).body
+        if (userId != null) {
+            runnerServiceProducer.publishSnippetEvent(
+                SnippetMessage(
+                    snippetId = snippet.id,
+                    userId = userId,
+                    version = snippet.language.version,
+                    jwtToken = token,
+                ),
+            )
+        }
 
         return FullSnippet(snippet, content, emptyList())
     }
@@ -166,39 +177,50 @@ class SnippetService(
         token: String,
     ): FullSnippet {
         checkIfExists(id, "edit")
+
+        // Verificar permisos de edición: Viewer no puede editar
+        val userRole = authorizationServiceClient.getUserRoleForSnippet(token, id)
+        if (userRole == "Viewer") {
+            throw RuntimeException(
+                "No tenés permisos para editar este snippet. Solo tenés permisos de lectura (Viewer).",
+            )
+        }
+
         val snippet = snippetRepository.findById(id).get()
         assetService.put("snippets", id, content)
 
         // Publicar mensaje en Redis para que runner-service valide el snippet actualizado
-        val userId = authorizationServiceClient.validate(token).body ?: 0L
-        runnerServiceProducer.publishSnippetEvent(
-            SnippetMessage(
-                snippetId = snippet.id,
-                userId = userId,
-                version = snippet.language.version,
-                jwtToken = token,
-            ),
-        )
+        val userId = authorizationServiceClient.validate(token).body
+        if (userId != null) {
+            runnerServiceProducer.publishSnippetEvent(
+                SnippetMessage(
+                    snippetId = snippet.id,
+                    userId = userId,
+                    version = snippet.language.version,
+                    jwtToken = token,
+                ),
+            )
 
-        // User Story #16: Testing automático - publicar mensaje para ejecutar todos los tests
-        try {
-            val tests = testService.getTestsBySnippetId(snippet.id)
-            tests.forEach { test ->
-                runnerServiceProducer.publishTestEvent(
-                    TestMessage(
-                        testId = test.id,
-                        snippetId = snippet.id,
-                        userId = userId,
-                        version = snippet.language.version,
-                        jwtToken = token,
-                        inputs = test.input,
-                        outputs = test.output,
-                    ),
-                )
+            // User Story #16: Testing automático - publicar mensaje para ejecutar todos los tests
+            try {
+                val tests = testService.getTestsBySnippetId(snippet.id)
+                tests.forEach { test ->
+                    runnerServiceProducer.publishTestEvent(
+                        TestMessage(
+                            testId = test.id,
+                            snippetId = snippet.id,
+                            userId = userId,
+                            version = snippet.language.version,
+                            jwtToken = token,
+                            inputs = test.input,
+                            outputs = test.output,
+                        ),
+                    )
+                }
+            } catch (e: Exception) {
+                // Si no hay tests o hay error, continuar sin problemas
+                println("No se pudieron ejecutar tests automáticamente: ${e.message}")
             }
-        } catch (e: Exception) {
-            // Si no hay tests o hay error, continuar sin problemas
-            println("No se pudieron ejecutar tests automáticamente: ${e.message}")
         }
 
         return FullSnippet(snippet, content)
@@ -245,22 +267,57 @@ class SnippetService(
         return FullSnippet(updatedSnippet, assetService.get("snippets", id))
     }
 
+    fun runSnippet(
+        id: Long,
+        inputs: List<String>,
+        token: String,
+    ): List<String> {
+        val snippet = get(id)
+
+        val headers =
+            HttpHeaders().apply {
+                contentType = MediaType.APPLICATION_JSON
+                set("Authorization", token)
+            }
+
+        val body =
+            mapOf(
+                "version" to snippet.version,
+                "code" to snippet.content,
+            )
+
+        val entity: HttpEntity<Map<String, Any>> = HttpEntity(body, headers)
+        val url = "$runnerServiceUrl/api/printscript/interpret"
+
+        val response =
+            restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                object : ParameterizedTypeReference<List<String>>() {},
+            )
+
+        return response.body ?: emptyList()
+    }
+
     fun format(
         id: Long,
         content: String,
         token: String,
     ) {
-        val userId = authorizationServiceClient.validate(token).body ?: return
-        val snippet = get(id)
+        val userId = authorizationServiceClient.validate(token).body
+        if (userId != null) {
+            val snippet = get(id)
 
-        // Publicar mensaje en Redis para que runner-service formatee el snippet
-        runnerServiceProducer.publishSnippetEvent(
-            SnippetMessage(
-                snippetId = snippet.id,
-                userId = userId,
-                version = snippet.version,
-                jwtToken = token,
-            ),
-        )
+            // Publicar mensaje en Redis para que runner-service formatee el snippet
+            runnerServiceProducer.publishSnippetEvent(
+                SnippetMessage(
+                    snippetId = snippet.id,
+                    userId = userId,
+                    version = snippet.version,
+                    jwtToken = token,
+                ),
+            )
+        }
     }
 }

@@ -40,6 +40,11 @@ stream:
   runner:
     key: runnerStream
 
+# Runner service base URL
+runner:
+  service:
+    url: ${RUNNER_SERVICE_URL:http://runner-service:8080}
+
 # Configuración de Auth0
 auth0:
   issuer: ${AUTH_SERVER_URI}

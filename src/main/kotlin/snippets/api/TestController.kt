@@ -55,7 +55,10 @@ class TestController(
         @RequestHeader("Authorization") token: String,
         @PathVariable id: Long,
     ): ResponseEntity<String> {
-        val userId = authorizationServiceClient.validate(token).body ?: 0L
+        val userId =
+            authorizationServiceClient.validate(token).body
+                ?: return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body("Invalid token")
         testService.executeTest(token, id, userId)
         return ResponseEntity.ok("Test execution request published to runner-service")
     }
@@ -65,7 +68,10 @@ class TestController(
         @RequestHeader("Authorization") token: String,
         @PathVariable snippetId: Long,
     ): ResponseEntity<String> {
-        val userId = authorizationServiceClient.validate(token).body ?: 0L
+        val userId =
+            authorizationServiceClient.validate(token).body
+                ?: return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body("Invalid token")
         testService.executeAllSnippetTests(token, snippetId, userId)
         return ResponseEntity.ok("All tests execution requests published to runner-service")
     }

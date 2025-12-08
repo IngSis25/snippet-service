@@ -35,7 +35,13 @@ interface AuthorizationServiceClientRoutes {
         fromEmail: String,
         toEmail: String,
         snippet: FullSnippet,
+        role: String,
     ): ResponseEntity<FullSnippet>
 
-    fun validate(token: String): ResponseEntity<Long>
+    fun validate(token: String): ResponseEntity<String>
+
+    fun getUserRoleForSnippet(
+        token: String,
+        snippetId: Long,
+    ): String?
 }

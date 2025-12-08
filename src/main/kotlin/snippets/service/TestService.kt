@@ -48,7 +48,7 @@ class TestService(
     fun executeTest(
         token: String,
         testId: Long,
-        userId: Long,
+        userId: String,
     ) {
         val test = getTestById(testId)
         val snippet = test.snippet
@@ -70,7 +70,7 @@ class TestService(
     fun executeAllSnippetTests(
         token: String,
         snippetId: Long,
-        userId: Long,
+        userId: String,
     ) {
         val tests = getTestsBySnippetId(snippetId)
         val snippet =

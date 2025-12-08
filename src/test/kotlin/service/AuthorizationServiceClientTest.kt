@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
@@ -51,8 +52,14 @@ class AuthorizationServiceClientTest {
         val token = "test-token"
         val service = AuthorizationServiceClient(restTemplate, authorizationServiceUrl)
 
-        whenever(restTemplate.postForObject(any<String>(), any(), any<Class<*>>()))
-            .thenReturn("User is the owner of the snippet")
+        whenever(
+            restTemplate.exchange(
+                any<String>(),
+                any<HttpMethod>(),
+                any(),
+                any<Class<String>>(),
+            ),
+        ).thenReturn(ResponseEntity.ok("User is the owner of the snippet"))
 
         // When
         val result = service.checkIfOwner(snippetId, email, token)
@@ -69,8 +76,14 @@ class AuthorizationServiceClientTest {
         val token = "test-token"
         val service = AuthorizationServiceClient(restTemplate, authorizationServiceUrl)
 
-        whenever(restTemplate.postForObject(any<String>(), any(), any<Class<*>>()))
-            .thenReturn("User is not the owner")
+        whenever(
+            restTemplate.exchange(
+                any<String>(),
+                any<HttpMethod>(),
+                any(),
+                any<Class<String>>(),
+            ),
+        ).thenReturn(ResponseEntity.ok("User is not the owner"))
 
         // When
         val result = service.checkIfOwner(snippetId, email, token)
@@ -87,8 +100,14 @@ class AuthorizationServiceClientTest {
         val token = "test-token"
         val service = AuthorizationServiceClient(restTemplate, authorizationServiceUrl)
 
-        whenever(restTemplate.postForObject(any<String>(), any(), any<Class<*>>()))
-            .thenThrow(RuntimeException("Error"))
+        whenever(
+            restTemplate.exchange(
+                any<String>(),
+                any<HttpMethod>(),
+                any(),
+                any<Class<String>>(),
+            ),
+        ).thenThrow(RuntimeException("Error"))
 
         // When
         val result = service.checkIfOwner(snippetId, email, token)
@@ -101,7 +120,7 @@ class AuthorizationServiceClientTest {
     fun `validate should return user id when token is valid`() {
         // Given
         val token = "test-token"
-        val userId = 1L
+        val userId = "auth0|123"
         val service = AuthorizationServiceClient(restTemplate, authorizationServiceUrl)
 
         whenever(
@@ -109,7 +128,7 @@ class AuthorizationServiceClientTest {
                 any<String>(),
                 any<HttpMethod>(),
                 any(),
-                any<Class<Long>>(),
+                any<Class<String>>(),
             ),
         ).thenReturn(ResponseEntity.ok(userId))
 
@@ -132,7 +151,7 @@ class AuthorizationServiceClientTest {
                 any<String>(),
                 any<HttpMethod>(),
                 any(),
-                any<Class<Long>>(),
+                any<Class<String>>(),
             ),
         ).thenThrow(RuntimeException("Invalid token"))
 
@@ -148,13 +167,25 @@ class AuthorizationServiceClientTest {
         // Given
         val token = "test-token"
         val userId = "user123"
+        val auth0Id = "auth0|123"
         val snippets = listOf(SnippetUserDto(snippetId = 1L, role = "Owner"))
         val service = AuthorizationServiceClient(restTemplate, authorizationServiceUrl)
 
+        // Mock validate() first
         whenever(
             restTemplate.exchange(
                 any<String>(),
-                any<HttpMethod>(),
+                eq(HttpMethod.GET),
+                any(),
+                any<Class<String>>(),
+            ),
+        ).thenReturn(ResponseEntity.ok(auth0Id))
+
+        // Mock get-user-snippets
+        whenever(
+            restTemplate.exchange(
+                any<String>(),
+                eq(HttpMethod.GET),
                 any(),
                 any<ParameterizedTypeReference<List<SnippetUserDto>>>(),
             ),
@@ -200,7 +231,7 @@ class AuthorizationServiceClientTest {
         val service = AuthorizationServiceClient(restTemplate, authorizationServiceUrl)
 
         // When
-        val result = service.shareSnippet(token, snippetId, email, email, fullSnippet)
+        val result = service.shareSnippet(token, snippetId, email, email, fullSnippet, "editor")
 
         // Then
         assert(result.statusCode == HttpStatus.BAD_REQUEST)
@@ -215,11 +246,17 @@ class AuthorizationServiceClientTest {
         val toEmail = "to@example.com"
         val service = AuthorizationServiceClient(restTemplate, authorizationServiceUrl)
 
-        whenever(restTemplate.postForObject(any<String>(), any(), any<Class<*>>()))
-            .thenReturn("User is not the owner")
+        whenever(
+            restTemplate.exchange(
+                any<String>(),
+                any<HttpMethod>(),
+                any(),
+                any<Class<String>>(),
+            ),
+        ).thenReturn(ResponseEntity.ok("User is not the owner"))
 
         // When
-        val result = service.shareSnippet(token, snippetId, fromEmail, toEmail, fullSnippet)
+        val result = service.shareSnippet(token, snippetId, fromEmail, toEmail, fullSnippet, "editor")
 
         // Then
         assert(result.statusCode == HttpStatus.FORBIDDEN)
@@ -234,11 +271,18 @@ class AuthorizationServiceClientTest {
         val toEmail = "to@example.com"
         val service = AuthorizationServiceClient(restTemplate, authorizationServiceUrl)
 
-        whenever(restTemplate.postForObject(any<String>(), any(), any<Class<*>>()))
-            .thenReturn("User is the owner of the snippet")
+        // Mock checkIfOwner (returns true)
+        whenever(
+            restTemplate.exchange(
+                any<String>(),
+                eq(HttpMethod.POST),
+                any(),
+                any<Class<String>>(),
+            ),
+        ).thenReturn(ResponseEntity.ok("User is the owner of the snippet"))
 
         // When
-        val result = service.shareSnippet(token, snippetId, fromEmail, toEmail, fullSnippet)
+        val result = service.shareSnippet(token, snippetId, fromEmail, toEmail, fullSnippet, "editor")
 
         // Then
         assert(result.statusCode == HttpStatus.OK)
@@ -254,8 +298,14 @@ class AuthorizationServiceClientTest {
         val role = "Owner"
         val service = AuthorizationServiceClient(restTemplate, authorizationServiceUrl)
 
-        whenever(restTemplate.postForObject(any<String>(), any(), any<Class<*>>()))
-            .thenReturn("Success")
+        whenever(
+            restTemplate.exchange(
+                any<String>(),
+                any<HttpMethod>(),
+                any(),
+                any<Class<String>>(),
+            ),
+        ).thenReturn(ResponseEntity.ok("Success"))
 
         // When
         service.addSnippetToUser(token, email, snippetId, role)

@@ -11,10 +11,8 @@ import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import org.springframework.util.MultiValueMap
 import org.springframework.web.client.RestTemplate
-import org.springframework.web.util.UriUtils
 import snippets.dto.response.FullSnippet
 import snippets.dto.response.SnippetUserDto
-import java.nio.charset.StandardCharsets
 
 /**
  * Cliente HTTP para comunicarse con el authorization-service.
@@ -25,31 +23,56 @@ class AuthorizationServiceClient(
     private val restTemplate: RestTemplate,
     @Value("\${spring.authorization.service.url}") private val authorizationServiceUrl: String,
 ) : AuthorizationServiceClientRoutes {
+    /**
+     * Nuevo contrato:
+     * - Endpoint: POST /api/user/add-snippet/{snippetId}
+     * - El usuario se identifica por el token (claim "sub").
+     * - El body solo lleva { "role": "Owner" | "Guest" | ... }.
+     *
+     * El parámetro email ya no se usa, pero lo dejamos en la firma
+     * para no romper código que todavía lo pasa.
+     */
     override fun addSnippetToUser(
         token: String,
         email: String,
         snippetId: Long,
         role: String,
     ) {
-        val body: Map<String, Any> = mapOf("snippetId" to snippetId, "role" to role)
-
+        val body: Map<String, Any> =
+            mapOf(
+                "role" to role,
+                "email" to email,
+            )
         val headers = getJsonAuthorizedHeaders(token)
-
         val entity = HttpEntity(body, headers)
-        val encodedEmail = UriUtils.encodePath(email, StandardCharsets.UTF_8)
-        executePost(entity, "/add-snippet/$encodedEmail")
+
+        // Ahora usamos snippetId en el path, no email
+        val result = executePost(entity, "/add-snippet/$snippetId")
+        if (result == null) {
+            println("ERROR: Failed to add snippet $snippetId to user $email with role $role")
+            throw RuntimeException("Failed to add snippet to user")
+        }
+        println("SUCCESS: Added snippet $snippetId to user $email with role $role. Response: $result")
     }
 
+    /**
+     * Nuevo contrato:
+     * - Endpoint: POST /api/user/check-owner/{snippetId}
+     * - El usuario se identifica por el token (claim "sub").
+     * - No hace falta mandar email ni snippetId en el body.
+     *
+     * El parámetro email se ignora.
+     */
     override fun checkIfOwner(
         snippetId: Long,
         email: String,
         token: String,
     ): Boolean {
-        val body: Map<String, Any> = mapOf("snippetId" to snippetId, "email" to email)
-        val entity = HttpEntity(body, getJsonAuthorizedHeaders(token))
+        val emptyBody: Map<String, Any> = emptyMap()
+        val entity = HttpEntity(emptyBody, getJsonAuthorizedHeaders(token))
 
         return try {
-            val response = executePost(entity, "/check-owner")
+            val response = executePost(entity, "/check-owner/$snippetId")
             response?.equals("User is the owner of the snippet", ignoreCase = true) == true
         } catch (e: Exception) {
             println("Error checking ownership: ${e.message}")
@@ -57,16 +80,33 @@ class AuthorizationServiceClient(
         }
     }
 
+    /**
+     * Nuevo contrato:
+     * - Primero llamamos a /api/user/validate con el token para obtener el auth0Id.
+     * - Luego hacemos GET /api/user/get-user-snippets/{auth0Id}.
+     *
+     * El parámetro userId ya no se usa (lo sacamos del token),
+     * pero lo dejamos en la firma para no romper dependencias.
+     */
     override fun getSnippetsOfUser(
         token: String,
         userId: String,
     ): List<SnippetUserDto> {
-        val body = mapOf("userId" to userId)
-        val entity = HttpEntity(body, getJsonAuthorizedHeaders(token))
         return try {
+            // Primero obtener auth0Id desde /validate
+            val validateResponse = validate(token)
+            val auth0Id = validateResponse.body
+
+            if (auth0Id.isNullOrBlank()) {
+                println("Error getting snippets of user: auth0Id is null/blank from validate()")
+                return emptyList()
+            }
+
+            val entity = HttpEntity<Void>(getJsonAuthorizedHeaders(token))
+
             val response =
                 restTemplate.exchange(
-                    "$authorizationServiceUrl/user/get-user-snippets/$userId",
+                    "$authorizationServiceUrl/user/get-user-snippets/$auth0Id",
                     HttpMethod.GET,
                     entity,
                     object : ParameterizedTypeReference<List<SnippetUserDto>>() {},
@@ -84,6 +124,7 @@ class AuthorizationServiceClient(
         fromEmail: String,
         toEmail: String,
         snippet: FullSnippet,
+        role: String,
     ): ResponseEntity<FullSnippet> {
         if (fromEmail == toEmail) {
             return ResponseEntity
@@ -99,14 +140,25 @@ class AuthorizationServiceClient(
                 .body(FullSnippet())
         }
 
-        addSnippetToUser(token, toEmail, snippetId, "Guest")
-        return ResponseEntity
-            .status(HttpStatus.OK)
-            .header("Share-Status", "Snippet shared with $toEmail")
-            .body(snippet)
+        // email del invitado se sigue usando solo como metadata, pero
+        // la asociación real usuario-snippet se hace por token + auth0Id en el authorization-service
+        try {
+            // Usar el role pasado como parámetro (Editor, Viewer, etc.)
+            addSnippetToUser(token, toEmail, snippetId, role)
+            return ResponseEntity
+                .status(HttpStatus.OK)
+                .header("Share-Status", "Snippet shared with $toEmail")
+                .body(snippet)
+        } catch (e: Exception) {
+            println("ERROR sharing snippet $snippetId with $toEmail: ${e.message}")
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .header("Share-Status", "Failed to share snippet: ${e.message}")
+                .body(snippet)
+        }
     }
 
-    override fun validate(token: String): ResponseEntity<Long> {
+    override fun validate(token: String): ResponseEntity<String> {
         return try {
             val headers =
                 HttpHeaders().apply {
@@ -119,11 +171,24 @@ class AuthorizationServiceClient(
                 "$authorizationServiceUrl/user/validate",
                 HttpMethod.GET,
                 entity,
-                Long::class.java,
+                String::class.java,
             )
         } catch (e: Exception) {
             print("VALIDATE -> Error validating token: $e")
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        }
+    }
+
+    override fun getUserRoleForSnippet(
+        token: String,
+        snippetId: Long,
+    ): String? {
+        return try {
+            val snippets = getSnippetsOfUser(token, "")
+            snippets.find { it.snippetId == snippetId }?.role
+        } catch (e: Exception) {
+            println("Error getting user role for snippet $snippetId: ${e.message}")
+            null
         }
     }
 
@@ -136,12 +201,58 @@ class AuthorizationServiceClient(
 
     private fun executePost(
         entity: HttpEntity<Map<String, Any>>,
-        string: String,
+        path: String,
     ): String? {
-        return restTemplate.postForObject(
-            "$authorizationServiceUrl/user$string",
-            entity,
-            String::class.java,
-        )
+        return try {
+            val response =
+                restTemplate.exchange(
+                    "$authorizationServiceUrl/user$path",
+                    HttpMethod.POST,
+                    entity,
+                    String::class.java,
+                )
+            if (response.statusCode.is2xxSuccessful) {
+                println("POST to $path successful: ${response.body}")
+                response.body
+            } else {
+                println("POST to $path failed with status ${response.statusCode}: ${response.body}")
+                null
+            }
+        } catch (e: Exception) {
+            println("Error executing POST to $path: ${e.message}")
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun searchUsers(
+        search: String,
+        token: String,
+    ): List<AuthUserDTO> {
+        if (search.isBlank()) return emptyList()
+
+        val url = "$authorizationServiceUrl/auth0/users?search=$search"
+
+        val headers =
+            HttpHeaders().apply {
+                set("Authorization", token)
+            }
+
+        val entity = HttpEntity<Void>(headers)
+
+        val response =
+            restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                object : ParameterizedTypeReference<List<AuthUserDTO>>() {},
+            )
+
+        return response.body ?: emptyList()
     }
 }
+
+data class AuthUserDTO(
+    val id: String,
+    val email: String,
+)

@@ -8,7 +8,7 @@ class SnippetMessageTest {
     fun `constructor should create SnippetMessage`() {
         // Given
         val snippetId = 1L
-        val userId = 2L
+        val userId = "auth0|123"
         val version = "1.0"
         val jwtToken = "test-token"
 
