@@ -10,7 +10,10 @@ import org.springframework.web.client.RestTemplate
 class AppConfig {
     @Bean
     fun restTemplate(): RestTemplate {
-        return RestTemplate()
+        val restTemplate = RestTemplate()
+        // Agregar interceptor para propagar Request-ID en todas las llamadas HTTP salientes
+        restTemplate.interceptors.add(RequestIdInterceptor())
+        return restTemplate
     }
 
     @Bean
