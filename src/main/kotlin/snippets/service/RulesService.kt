@@ -39,7 +39,9 @@ class RulesService(
         token: String,
         version: String,
     ): List<Rule> {
-        val userId = authorizationServiceClient.validate(token).body ?: return getDefaultRules(version)
+        val userId =
+            authorizationServiceClient.validate(token).body
+                ?: return getDefaultRules(RulesType.FORMATTER, version)
 
         val rulesState =
             rulesStateRepository.findByTypeAndOwnerId(RulesType.FORMATTER, userId)
