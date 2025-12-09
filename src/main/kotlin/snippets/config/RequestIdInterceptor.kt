@@ -11,7 +11,6 @@ import org.springframework.http.client.ClientHttpResponse
  * en todas las llamadas HTTP salientes a otros servicios.
  */
 class RequestIdInterceptor : ClientHttpRequestInterceptor {
-
     companion object {
         const val REQUEST_ID_HEADER = "X-Request-ID"
         const val REQUEST_ID_MDC_KEY = "requestId"
@@ -34,4 +33,3 @@ class RequestIdInterceptor : ClientHttpRequestInterceptor {
         return execution.execute(request, body)
     }
 }
-

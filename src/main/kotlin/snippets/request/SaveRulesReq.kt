@@ -5,4 +5,3 @@ data class SaveRulesReq(
     val configText: String? = null,
     val configFormat: String? = null,
 )
-

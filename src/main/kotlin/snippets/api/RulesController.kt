@@ -128,8 +128,9 @@ class InternalSnippetRulesController(
         @PathVariable id: Long,
         @RequestBody body: Map<String, String>,
     ): ResponseEntity<Map<String, String>> {
-        val formattedContent = body["content"]
-            ?: return ResponseEntity.badRequest().body(mapOf("error" to "Content field is required"))
+        val formattedContent =
+            body["content"]
+                ?: return ResponseEntity.badRequest().body(mapOf("error" to "Content field is required"))
 
         rulesService.saveFormatResult(id, formattedContent)
         return ResponseEntity.ok(mapOf("message" to "Format result saved"))
@@ -144,11 +145,11 @@ class InternalSnippetRulesController(
         @PathVariable id: Long,
         @RequestBody body: Map<String, String>,
     ): ResponseEntity<Map<String, String>> {
-        val lintWarnings = body["warnings"] ?: body["content"]
-            ?: return ResponseEntity.badRequest().body(mapOf("error" to "Warnings field is required"))
+        val lintWarnings =
+            body["warnings"] ?: body["content"]
+                ?: return ResponseEntity.badRequest().body(mapOf("error" to "Warnings field is required"))
 
         rulesService.saveLintResult(id, lintWarnings)
         return ResponseEntity.ok(mapOf("message" to "Lint result saved"))
     }
 }
-

@@ -20,7 +20,6 @@ import java.util.UUID
 @Component
 @Order(1) // Ejecutar antes que otros filters
 class RequestIdFilter : Filter {
-
     companion object {
         const val REQUEST_ID_HEADER = "X-Request-ID"
         const val REQUEST_ID_MDC_KEY = "requestId"
@@ -36,8 +35,9 @@ class RequestIdFilter : Filter {
 
         try {
             // Obtener Request-ID del header o generar uno nuevo
-            val requestId = httpRequest.getHeader(REQUEST_ID_HEADER)
-                ?: UUID.randomUUID().toString()
+            val requestId =
+                httpRequest.getHeader(REQUEST_ID_HEADER)
+                    ?: UUID.randomUUID().toString()
 
             // Agregar al MDC para que aparezca en los logs
             MDC.put(REQUEST_ID_MDC_KEY, requestId)
@@ -53,4 +53,3 @@ class RequestIdFilter : Filter {
         }
     }
 }
-

@@ -9,7 +9,6 @@ import snippets.dto.request.Rule
  */
 @Component
 class FormatterRulesFactory {
-
     /**
      * Obtiene todas las reglas disponibles del formatter para una versión específica.
      * @param version Versión del lenguaje (1.0 o 1.1)
@@ -119,7 +118,7 @@ class FormatterRulesFactory {
                 id = "number_of_spaces_indentation",
                 name = "number_of_spaces_indentation",
                 isActive = false,
-                value = 2, // valor por defecto: 2 espacios
+                value = 2,
             ),
             Rule(
                 id = "same_line_for_if_brace",
@@ -156,4 +155,3 @@ class FormatterRulesFactory {
         return getAvailableRules(version).map { it.id }
     }
 }
-

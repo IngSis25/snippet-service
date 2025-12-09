@@ -33,12 +33,16 @@ class RulesService(
      * Obtiene las reglas de formato del usuario autenticado.
      * Si no tiene reglas guardadas, devuelve las reglas por defecto según la versión.
      */
-    fun getFormatRules(token: String, version: String): List<Rule> {
+    fun getFormatRules(
+        token: String,
+        version: String,
+    ): List<Rule> {
         val userId = authorizationServiceClient.validate(token).body ?: return getDefaultRules(version)
 
-        val rulesState = rulesStateRepository.findByTypeAndOwnerId(RulesType.FORMATTER, userId)
-            ?: rulesStateRepository.findByTypeAndOwnerIdIsNull(RulesType.FORMATTER)
-            ?: return getDefaultRules(version)
+        val rulesState =
+            rulesStateRepository.findByTypeAndOwnerId(RulesType.FORMATTER, userId)
+                ?: rulesStateRepository.findByTypeAndOwnerIdIsNull(RulesType.FORMATTER)
+                ?: return getDefaultRules(version)
 
         return getRulesFromState(rulesState, version)
     }
@@ -47,12 +51,16 @@ class RulesService(
      * Obtiene las reglas de linting del usuario autenticado.
      * Por ahora devuelve lista vacía hasta implementar linter rules.
      */
-    fun getLintRules(token: String, version: String): List<Rule> {
+    fun getLintRules(
+        token: String,
+        version: String,
+    ): List<Rule> {
         val userId = authorizationServiceClient.validate(token).body ?: return emptyList()
 
-        val rulesState = rulesStateRepository.findByTypeAndOwnerId(RulesType.LINTER, userId)
-            ?: rulesStateRepository.findByTypeAndOwnerIdIsNull(RulesType.LINTER)
-            ?: return emptyList()
+        val rulesState =
+            rulesStateRepository.findByTypeAndOwnerId(RulesType.LINTER, userId)
+                ?: rulesStateRepository.findByTypeAndOwnerIdIsNull(RulesType.LINTER)
+                ?: return emptyList()
 
         return getRulesFromState(rulesState, version)
     }
@@ -60,20 +68,26 @@ class RulesService(
     /**
      * Guarda y publica reglas de formato del usuario.
      */
-    fun saveFormatRules(token: String, request: SaveRulesReq): List<Rule> {
-        val userId = authorizationServiceClient.validate(token).body
-            ?: throw RuntimeException("Usuario no autenticado")
+    fun saveFormatRules(
+        token: String,
+        request: SaveRulesReq,
+    ): List<Rule> {
+        val userId =
+            authorizationServiceClient.validate(token).body
+                ?: throw RuntimeException("Usuario no autenticado")
 
         val enabledIds = request.rules.filter { it.isActive }.map { it.id }
-        val optionsMap = request.rules
-            .filter { it.isActive && it.value != null }
-            .associate { it.name to it.value }
+        val optionsMap =
+            request.rules
+                .filter { it.isActive && it.value != null }
+                .associate { it.name to it.value }
 
-        val rulesState = rulesStateRepository.findByTypeAndOwnerId(RulesType.FORMATTER, userId)
-            ?: FormatterRulesState(
-                type = RulesType.FORMATTER,
-                ownerId = userId,
-            )
+        val rulesState =
+            rulesStateRepository.findByTypeAndOwnerId(RulesType.FORMATTER, userId)
+                ?: FormatterRulesState(
+                    type = RulesType.FORMATTER,
+                    ownerId = userId,
+                )
 
         rulesState.enabledJson = enabledIds
         rulesState.optionsJson = optionsMap.ifEmpty { null }
@@ -105,20 +119,26 @@ class RulesService(
     /**
      * Guarda y publica reglas de linting del usuario.
      */
-    fun saveLintRules(token: String, request: SaveRulesReq): List<Rule> {
-        val userId = authorizationServiceClient.validate(token).body
-            ?: throw RuntimeException("Usuario no autenticado")
+    fun saveLintRules(
+        token: String,
+        request: SaveRulesReq,
+    ): List<Rule> {
+        val userId =
+            authorizationServiceClient.validate(token).body
+                ?: throw RuntimeException("Usuario no autenticado")
 
         val enabledIds = request.rules.filter { it.isActive }.map { it.id }
-        val optionsMap = request.rules
-            .filter { it.isActive && it.value != null }
-            .associate { it.name to it.value }
+        val optionsMap =
+            request.rules
+                .filter { it.isActive && it.value != null }
+                .associate { it.name to it.value }
 
-        val rulesState = rulesStateRepository.findByTypeAndOwnerId(RulesType.LINTER, userId)
-            ?: FormatterRulesState(
-                type = RulesType.LINTER,
-                ownerId = userId,
-            )
+        val rulesState =
+            rulesStateRepository.findByTypeAndOwnerId(RulesType.LINTER, userId)
+                ?: FormatterRulesState(
+                    type = RulesType.LINTER,
+                    ownerId = userId,
+                )
 
         rulesState.enabledJson = enabledIds
         rulesState.optionsJson = optionsMap.ifEmpty { null }
@@ -144,9 +164,13 @@ class RulesService(
     /**
      * Formatea un snippet usando las reglas del usuario (síncrono).
      */
-    fun formatSnippet(token: String, snippetId: Long): String {
-        val userId = authorizationServiceClient.validate(token).body
-            ?: throw RuntimeException("Usuario no autenticado")
+    fun formatSnippet(
+        token: String,
+        snippetId: Long,
+    ): String {
+        val userId =
+            authorizationServiceClient.validate(token).body
+                ?: throw RuntimeException("Usuario no autenticado")
 
         val snippet = snippetService.get(snippetId)
         val rawVersion = snippet.version
@@ -158,33 +182,34 @@ class RulesService(
 
         // Obtener reglas primero para verificar si hay reglas que requieren 1.1
         val tempRules = getFormatRules(token, rawVersion)
-        
+
         // Reglas que SOLO funcionan con versión 1.1
-        val v11OnlyRules = setOf(
-            "same_line_for_if_brace",
-            "same_line_for_else_brace",
-            "new_line_for_if_brace",
-            "single_space_separation",
-            "number_of_spaces_indentation"
-        )
-        
+        val v11OnlyRules =
+            setOf(
+                "same_line_for_if_brace",
+                "same_line_for_else_brace",
+                "new_line_for_if_brace",
+                "single_space_separation",
+                "number_of_spaces_indentation",
+            )
+
         // Verificar si alguna regla que requiere 1.1 está activa
         val hasV11OnlyRule = tempRules.any { it.isActive && it.name in v11OnlyRules }
-        
+
         // HARDCODED: Siempre usar versión 1.1 para el formatter
         // porque el parser de 1.0 no soporta llaves {} y estas reglas específicas
         val normalizedVersion = "1.1"
-        
+
         // Re-obtener reglas con la versión correcta (1.1)
         val rules = getFormatRules(token, normalizedVersion)
-        
+
         println("=== DEBUG: Formatting snippet ===")
         println("SnippetId: $snippetId")
         println("Raw version from snippet: '$rawVersion'")
         println("Has v1.1-only rules active: $hasV11OnlyRule")
         println("Using hardcoded version: '$normalizedVersion' (required for if/else and brace rules)")
         println("Content length: ${content.length}")
-        
+
         val rulesMap = mutableMapOf<String, Any?>()
         rules.forEach { rule ->
             if (rule.isActive) {
@@ -199,15 +224,16 @@ class RulesService(
             val typeName = value?.javaClass?.simpleName ?: "null"
             println("Rule '$key' = $value (type: $typeName)")
         }
-        
+
         // Verificar reglas específicas que pueden causar problemas
-        val problematicRules = setOf(
-            "same_line_for_if_brace",
-            "same_line_for_else_brace", 
-            "new_line_for_if_brace",
-            "single_space_separation",
-            "number_of_spaces_indentation"
-        )
+        val problematicRules =
+            setOf(
+                "same_line_for_if_brace",
+                "same_line_for_else_brace",
+                "new_line_for_if_brace",
+                "single_space_separation",
+                "number_of_spaces_indentation",
+            )
         val hasProblematicRules = rulesMap.keys.any { it in problematicRules }
         if (hasProblematicRules) {
             println("⚠️ WARNING: Active rules that require if/else structures or specific code format:")
@@ -220,10 +246,10 @@ class RulesService(
 
         val formattedContent = callFormatterService(token, normalizedVersion, content, rulesMap)
         assetService.put("snippets", snippetId, formattedContent)
-        
+
         return formattedContent
     }
-    
+
     /**
      * Normaliza la versión del snippet para asegurar que se use el formato correcto.
      * Convierte formatos como "v1.1", "1.1", "1" a "1.1" o "1.0" según corresponda.
@@ -248,21 +274,26 @@ class RulesService(
      *   - newline_before_println: valor por defecto 1
      * - Reglas booleanas (todas las demás) → Boolean
      */
-    private fun normalizeRuleValue(ruleName: String, value: Any?): Any {
+    private fun normalizeRuleValue(
+        ruleName: String,
+        value: Any?,
+    ): Any {
         // Reglas numéricas
-        val numericRules = setOf(
-            "number_of_spaces_indentation",
-            "newline_after_println",
-            "newline_before_println"
-        )
-        
+        val numericRules =
+            setOf(
+                "number_of_spaces_indentation",
+                "newline_after_println",
+                "newline_before_println",
+            )
+
         if (ruleName in numericRules) {
-            val defaultValue = when (ruleName) {
-                "number_of_spaces_indentation" -> 2
-                "newline_after_println", "newline_before_println" -> 1
-                else -> 1
-            }
-            
+            val defaultValue =
+                when (ruleName) {
+                    "number_of_spaces_indentation" -> 2
+                    "newline_after_println", "newline_before_println" -> 1
+                    else -> 1
+                }
+
             return when (value) {
                 is Number -> {
                     var intValue = value.toInt()
@@ -308,7 +339,7 @@ class RulesService(
                 }
             }
         }
-        
+
         // Reglas booleanas: todas las demás
         // Estas reglas (same_line_for_if_brace, same_line_for_else_brace, new_line_for_if_brace, single_space_separation)
         // son flags simples: si están presentes y no son "false", se aplican
@@ -319,14 +350,15 @@ class RulesService(
             }
             is String -> {
                 // Convertir strings "true"/"false" a booleanos
-                val boolValue = when (value.lowercase().trim()) {
-                    "true", "1" -> true
-                    "false", "0" -> false
-                    else -> {
-                        println("Warning: Invalid boolean value for $ruleName: '$value', using default true")
-                        true
+                val boolValue =
+                    when (value.lowercase().trim()) {
+                        "true", "1" -> true
+                        "false", "0" -> false
+                        else -> {
+                            println("Warning: Invalid boolean value for $ruleName: '$value', using default true")
+                            true
+                        }
                     }
-                }
                 println("Normalized $ruleName: '$value' (String) -> $boolValue (Boolean)")
                 boolValue
             }
@@ -346,45 +378,54 @@ class RulesService(
             }
         }
     }
-    
-    private fun callFormatterService(token: String, version: String, content: String, rulesMap: Map<String, Any?>): String {
+
+    private fun callFormatterService(
+        token: String,
+        version: String,
+        content: String,
+        rulesMap: Map<String, Any?>,
+    ): String {
         val url = "$runnerServiceUrl/v1/formatter/format"
-        
+
         try {
-            val headers = HttpHeaders().apply {
-                contentType = MediaType.APPLICATION_JSON
-                set("Authorization", token)
-            }
-            
-            val body = mapOf(
-                "version" to version,
-                "source" to content,
-                "config" to rulesMap
-            )
-            
+            val headers =
+                HttpHeaders().apply {
+                    contentType = MediaType.APPLICATION_JSON
+                    set("Authorization", token)
+                }
+
+            val body =
+                mapOf(
+                    "version" to version,
+                    "source" to content,
+                    "config" to rulesMap,
+                )
+
             println("=== DEBUG: Request to formatter ===")
             println("Version: $version")
             println("Content preview (first 200 chars): ${content.take(200)}")
             println("Config: $rulesMap")
             println("Config types: ${rulesMap.mapValues { it.value?.javaClass?.simpleName ?: "null" }}")
-            
+
             val entity = HttpEntity(body, headers)
-            
-            val response = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                entity,
-                object : ParameterizedTypeReference<Map<String, Any>>() {}
-            )
-            
+
+            val response =
+                restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    object : ParameterizedTypeReference<Map<String, Any>>() {},
+                )
+
             if (!response.statusCode.is2xxSuccessful) {
                 throw RuntimeException("Formatter service error: ${response.statusCode}")
             }
-            
+
             val responseBody = response.body ?: throw RuntimeException("Empty response from formatter")
-            val formatted = responseBody["formatted"] as? String
-                ?: throw RuntimeException("No formatted content in response: $responseBody")
-            
+            val formatted =
+                responseBody["formatted"] as? String
+                    ?: throw RuntimeException("No formatted content in response: $responseBody")
+
             return formatted
         } catch (e: org.springframework.web.client.ResourceAccessException) {
             throw RuntimeException("Cannot connect to formatter service at $url: ${e.message}", e)
@@ -407,9 +448,13 @@ class RulesService(
     /**
      * Lint de un snippet usando las reglas del usuario.
      */
-    fun lintSnippet(token: String, snippetId: Long) {
-        val userId = authorizationServiceClient.validate(token).body
-            ?: throw RuntimeException("Usuario no autenticado")
+    fun lintSnippet(
+        token: String,
+        snippetId: Long,
+    ) {
+        val userId =
+            authorizationServiceClient.validate(token).body
+                ?: throw RuntimeException("Usuario no autenticado")
 
         // Obtener snippet para obtener la versión
         val snippet = snippetService.get(snippetId)
@@ -420,7 +465,7 @@ class RulesService(
         runnerServiceProducer.publishLintEvent(
             snippets.config.SnippetMessage(
                 snippetId = snippetId,
-                userId = userId, // userId como String (auth0Id)
+                userId = userId,
                 version = normalizedVersion,
                 jwtToken = token,
             ),
@@ -430,14 +475,20 @@ class RulesService(
     /**
      * Guarda resultado de formato (usado por workers asíncronos).
      */
-    fun saveFormatResult(snippetId: Long, formattedContent: String) {
+    fun saveFormatResult(
+        snippetId: Long,
+        formattedContent: String,
+    ) {
         assetService.put("snippets", snippetId, formattedContent)
     }
 
     /**
      * Guarda resultado de lint (usado por workers asíncronos).
      */
-    fun saveLintResult(snippetId: Long, lintWarnings: String) {
+    fun saveLintResult(
+        snippetId: Long,
+        lintWarnings: String,
+    ) {
         assetService.put("lint-warnings", snippetId, lintWarnings)
     }
 
@@ -445,7 +496,10 @@ class RulesService(
         return formatterRulesFactory.getAvailableRules(version)
     }
 
-    private fun getRulesFromState(rulesState: FormatterRulesState, version: String): List<Rule> {
+    private fun getRulesFromState(
+        rulesState: FormatterRulesState,
+        version: String,
+    ): List<Rule> {
         val defaultRules = getDefaultRules(version)
         val enabledIds = rulesState.enabledJson.toSet()
         val optionsMap = rulesState.optionsJson ?: emptyMap()
@@ -463,4 +517,3 @@ class RulesService(
         }
     }
 }
-
