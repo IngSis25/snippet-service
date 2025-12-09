@@ -13,7 +13,6 @@ import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpResponse
 
 class RequestIdInterceptorTest {
-
     private lateinit var interceptor: RequestIdInterceptor
     private lateinit var request: HttpRequest
     private lateinit var execution: ClientHttpRequestExecution
@@ -80,4 +79,3 @@ class RequestIdInterceptorTest {
         verify(execution).execute(request, ByteArray(0))
     }
 }
-

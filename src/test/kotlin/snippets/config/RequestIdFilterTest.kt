@@ -14,7 +14,6 @@ import org.mockito.kotlin.whenever
 import org.slf4j.MDC
 
 class RequestIdFilterTest {
-
     private lateinit var filter: RequestIdFilter
     private lateinit var request: HttpServletRequest
     private lateinit var response: HttpServletResponse
@@ -97,4 +96,3 @@ class RequestIdFilterTest {
         // MDC should still be cleared even if exception occurs
     }
 }
-

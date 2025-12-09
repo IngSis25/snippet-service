@@ -1,7 +1,6 @@
 package snippets.dto.response
 
 import snippets.model.Compliance
-import snippets.model.Snippet
 
 data class SnippetDetailDto(
     val id: Long,
@@ -16,4 +15,3 @@ data class SnippetDetailDto(
     val isValid: Boolean,
     val warnings: List<String> = emptyList(),
 )
-

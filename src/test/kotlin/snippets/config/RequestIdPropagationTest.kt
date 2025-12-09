@@ -17,7 +17,6 @@ import org.springframework.web.client.RestTemplate
  * en las llamadas HTTP salientes realizadas con RestTemplate.
  */
 class RequestIdPropagationTest {
-
     private lateinit var restTemplate: RestTemplate
     private lateinit var mockServer: MockRestServiceServer
     private lateinit var interceptor: RequestIdInterceptor
@@ -105,4 +104,3 @@ class RequestIdPropagationTest {
         mockServer.verify()
     }
 }
-
