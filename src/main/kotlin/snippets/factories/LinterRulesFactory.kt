@@ -9,7 +9,6 @@ import snippets.dto.request.Rule
  */
 @Component
 class LinterRulesFactory {
-
     /**
      * Obtiene todas las reglas disponibles del linter para una versión específica.
      * @param version Versión del lenguaje (1.0 o 1.1)
@@ -34,14 +33,14 @@ class LinterRulesFactory {
             Rule(
                 id = "UnusedVariableCheck",
                 name = "UnusedVariableCheck",
-                isActive = true, // siempre activa, no se puede desactivar
+                isActive = true,
                 value = null,
             ),
             Rule(
                 id = "NamingFormatCheck",
                 name = "NamingFormatCheck",
                 isActive = false,
-                value = "camelCase", // valores posibles: camelCase, snake_case
+                value = "camelCase",
             ),
         )
     }
@@ -59,26 +58,26 @@ class LinterRulesFactory {
             Rule(
                 id = "UnusedVariableCheck",
                 name = "UnusedVariableCheck",
-                isActive = true, // siempre activa, no se puede desactivar
+                isActive = true,
                 value = null,
             ),
             Rule(
                 id = "NamingFormatCheck",
                 name = "NamingFormatCheck",
                 isActive = false,
-                value = "camelCase", // valores posibles: camelCase, snake_case
+                value = "camelCase",
             ),
             Rule(
                 id = "PrintUseCheck",
                 name = "PrintUseCheck",
                 isActive = false,
-                value = null, // booleano: cuando está activo, usa printlnCheckEnabled = true
+                value = null,
             ),
             Rule(
                 id = "ReadInputCheck",
                 name = "ReadInputCheck",
                 isActive = false,
-                value = null, // booleano: cuando está activo, usa readInputCheckEnabled = true
+                value = null,
             ),
         )
     }
@@ -91,4 +90,3 @@ class LinterRulesFactory {
         return getAvailableRules(version).map { it.id }
     }
 }
-

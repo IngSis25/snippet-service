@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import snippets.dto.request.DiagnosticDto
 import snippets.dto.request.Rule
 import snippets.dto.request.SaveRulesReq
 import snippets.service.RulesService

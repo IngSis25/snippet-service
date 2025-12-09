@@ -8,4 +8,3 @@ data class DiagnosticDto(
     val column: Int,
     val suggestions: List<String> = emptyList(),
 )
-
