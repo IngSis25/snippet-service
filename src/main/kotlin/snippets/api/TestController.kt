@@ -58,9 +58,21 @@ class TestController(
         val userId =
             authorizationServiceClient.validate(token).body
                 ?: return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
-                    .body("Invalid token")
-        testService.executeTest(token, id, userId)
-        return ResponseEntity.ok("Test execution request published to runner-service")
+                    .body("fail")
+        try {
+            val test = testService.getTestById(id)
+            val snippetId = test.snippet.id
+
+            // Publicar el test para ejecución
+            testService.executeTest(token, id, userId)
+
+            // Esperar y obtener el resultado real del test
+            val result = testService.getTestResult(id, snippetId, maxWaitSeconds = 10)
+            return ResponseEntity.ok(result)
+        } catch (e: Exception) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("fail")
+        }
     }
 
     @PostMapping("/snippet/{snippetId}/run-all")

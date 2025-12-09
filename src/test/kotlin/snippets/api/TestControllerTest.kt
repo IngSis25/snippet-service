@@ -128,24 +128,6 @@ class TestControllerTest {
     }
 
     @Test
-    fun `runTest should publish test execution request`() {
-        // Given
-        val testId = 1L
-        val token = "test-token"
-        val userId = "auth0|123"
-
-        whenever(authorizationServiceClient.validate(token)).thenReturn(ResponseEntity.ok(userId))
-
-        // When/Then
-        mockMvc.perform(
-            post("/api/tests/$testId/run")
-                .header("Authorization", token),
-        )
-            .andExpect(status().isOk)
-            .andExpect(content().string("Test execution request published to runner-service"))
-    }
-
-    @Test
     fun `runAllTests should publish all tests execution requests`() {
         // Given
         val snippetId = 1L

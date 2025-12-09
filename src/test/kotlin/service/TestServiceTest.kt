@@ -4,7 +4,6 @@ import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
@@ -20,6 +19,7 @@ import snippets.model.Language
 import snippets.model.Snippet
 import snippets.repositories.SnippetRepository
 import snippets.repositories.TestRepository
+import snippets.service.AssetService
 import snippets.service.RunnerServiceProducer
 import snippets.service.TestService
 import java.util.Optional
@@ -36,7 +36,9 @@ class TestServiceTest {
     @Mock
     private lateinit var runnerServiceProducer: RunnerServiceProducer
 
-    @InjectMocks
+    @Mock
+    private lateinit var assetService: AssetService
+
     private lateinit var testService: TestService
 
     private lateinit var language: Language
@@ -45,6 +47,15 @@ class TestServiceTest {
 
     @BeforeEach
     fun setUp() {
+        // Crear el servicio manualmente con todos los parámetros necesarios
+        testService =
+            TestService(
+                testRepository,
+                snippetRepository,
+                runnerServiceProducer,
+                assetService,
+            )
+
         language = Language(id = 1L, name = "PrintScript", version = "1.0", extension = "ps")
         snippet =
             Snippet(

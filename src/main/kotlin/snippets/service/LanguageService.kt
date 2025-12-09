@@ -40,4 +40,15 @@ class LanguageService(
         return languageRepository.findByExtensionIgnoreCase(extension)
             .orElse(null)
     }
+
+    fun getLanguageByNameAndVersion(
+        name: String?,
+        version: String?,
+    ): Language? {
+        if (name.isNullOrBlank() || version.isNullOrBlank()) {
+            return null
+        }
+        return languageRepository.findByNameIgnoreCaseAndVersion(name, version)
+            .orElse(null)
+    }
 }

@@ -10,4 +10,9 @@ interface LanguageRepository : JpaRepository<Language, Long> {
     fun findByNameIgnoreCase(name: String): Optional<Language>
 
     fun findByExtensionIgnoreCase(extension: String): Optional<Language>
+
+    fun findByNameIgnoreCaseAndVersion(
+        name: String,
+        version: String,
+    ): Optional<Language>
 }
