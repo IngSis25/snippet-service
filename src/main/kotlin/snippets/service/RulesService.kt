@@ -13,6 +13,7 @@ import snippets.dto.request.Rule
 import snippets.dto.request.SaveRulesReq
 import snippets.enums.RulesType
 import snippets.factories.FormatterRulesFactory
+import snippets.factories.LinterRulesFactory
 import snippets.model.FormatterRulesState
 import snippets.repositories.FormatterRulesStateRepository
 
@@ -20,6 +21,7 @@ import snippets.repositories.FormatterRulesStateRepository
 class RulesService(
     private val rulesStateRepository: FormatterRulesStateRepository,
     private val formatterRulesFactory: FormatterRulesFactory,
+    private val linterRulesFactory: LinterRulesFactory,
     private val assetService: AssetService,
     private val authorizationServiceClient: AuthorizationServiceClient,
     private val runnerServiceProducer: RunnerServiceProducer,
@@ -42,9 +44,9 @@ class RulesService(
         val rulesState =
             rulesStateRepository.findByTypeAndOwnerId(RulesType.FORMATTER, userId)
                 ?: rulesStateRepository.findByTypeAndOwnerIdIsNull(RulesType.FORMATTER)
-                ?: return getDefaultRules(version)
+                ?: return getDefaultRules(RulesType.FORMATTER, version)
 
-        return getRulesFromState(rulesState, version)
+        return getRulesFromState(rulesState, version, RulesType.FORMATTER)
     }
 
     /**
@@ -60,9 +62,13 @@ class RulesService(
         val rulesState =
             rulesStateRepository.findByTypeAndOwnerId(RulesType.LINTER, userId)
                 ?: rulesStateRepository.findByTypeAndOwnerIdIsNull(RulesType.LINTER)
-                ?: return emptyList()
+                ?: return getDefaultRules(RulesType.LINTER, version).also {
+                    persistRulesToAsset(RulesType.LINTER, userId, it)
+                }
 
-        return getRulesFromState(rulesState, version)
+        val rules = getRulesFromState(rulesState, version, RulesType.LINTER)
+        persistRulesToAsset(RulesType.LINTER, userId, rules)
+        return rules
     }
 
     /**
@@ -96,24 +102,9 @@ class RulesService(
 
         val savedState = rulesStateRepository.save(rulesState)
 
-        // Guardar reglas en asset service para que runner-service las use
-        // El userId (auth0Id) se usa directamente como string en el asset service
-        val rulesJson = objectMapper.writeValueAsString(request.rules)
-        try {
-            // El asset service usa el userId como identificador
-            // Necesitamos usar un hash estable del userId para el ID numérico
-            val userIdLong = userId.hashCode().toLong().and(0x7FFFFFFF)
-            println("=== DEBUG: Saving format rules ===")
-            println("UserId: $userId, Hash: $userIdLong")
-            println("Rules JSON: $rulesJson")
-            assetService.put("format-rules", userIdLong, rulesJson)
-            println("Rules saved successfully")
-        } catch (e: Exception) {
-            println("Error saving format rules to asset service: ${e.message}")
-            e.printStackTrace()
-        }
+        persistRulesToAsset(RulesType.FORMATTER, userId, request.rules)
 
-        return getRulesFromState(savedState, "1.1") // Asumimos versión 1.1 por defecto
+        return getRulesFromState(savedState, "1.1", RulesType.FORMATTER) // Asumimos versión 1.1 por defecto
     }
 
     /**
@@ -147,18 +138,9 @@ class RulesService(
 
         val savedState = rulesStateRepository.save(rulesState)
 
-        // Guardar reglas en asset service para que runner-service las use
-        // El userId (auth0Id) se usa directamente como string en el asset service
-        val rulesJson = objectMapper.writeValueAsString(request.rules)
-        try {
-            // El asset service usa el userId como identificador
-            // Necesitamos usar un hash estable del userId para el ID numérico
-            assetService.put("lint-rules", userId.hashCode().toLong().and(0x7FFFFFFF), rulesJson)
-        } catch (e: Exception) {
-            println("Error saving lint rules to asset service: ${e.message}")
-        }
+        persistRulesToAsset(RulesType.LINTER, userId, request.rules)
 
-        return getRulesFromState(savedState, "1.1") // Asumimos versión 1.1 por defecto
+        return getRulesFromState(savedState, "1.1", RulesType.LINTER) // Asumimos versión 1.1 por defecto
     }
 
     /**
@@ -446,7 +428,7 @@ class RulesService(
     }
 
     /**
-     * Lint de un snippet usando las reglas del usuario.
+     * Lint de un snippet usando las reglas del usuario (asíncrono).
      */
     fun lintSnippet(
         token: String,
@@ -473,6 +455,117 @@ class RulesService(
     }
 
     /**
+     * Lint de un snippet usando las reglas del usuario (síncrono).
+     * Devuelve el snippet con información de lint actualizada.
+     */
+    fun lintSnippetSync(
+        token: String,
+        snippetId: Long,
+    ): snippets.dto.response.SnippetDetailDto {
+        val userId =
+            authorizationServiceClient.validate(token).body
+                ?: throw RuntimeException("Usuario no autenticado")
+
+        val snippet = snippetService.get(snippetId)
+        val rawVersion = snippet.version
+        val normalizedVersion = normalizeVersion(rawVersion)
+        val content = snippet.content
+
+        if (content.isBlank()) {
+            throw RuntimeException("Snippet content is empty")
+        }
+
+        // Obtener reglas de linting
+        val rules = getLintRules(token, normalizedVersion)
+
+        val rulesMap = mutableMapOf<String, Any?>()
+        rules.forEach { rule ->
+            if (rule.isActive) {
+                val normalizedValue = normalizeRuleValue(rule.name, rule.value)
+                rulesMap[rule.name] = normalizedValue
+            }
+        }
+
+        // Llamar al servicio de lint síncronamente
+        val warnings = callLinterService(token, normalizedVersion, content, rulesMap)
+
+        // Guardar warnings en asset service
+        val warningsJson = objectMapper.writeValueAsString(warnings)
+        assetService.put("lint-warnings", snippetId, warningsJson)
+
+        // Actualizar estado del snippet
+        val success = warnings.isEmpty()
+        val newStatus = if (success) snippets.model.Compliance.SUCCESS else snippets.model.Compliance.FAILED
+        snippetService.updateStatus(snippetId, newStatus)
+
+        // Obtener snippet actualizado
+        val updatedSnippet = snippetService.get(snippetId)
+
+        return snippets.dto.response.SnippetDetailDto(
+            id = updatedSnippet.id,
+            name = updatedSnippet.name,
+            owner = updatedSnippet.owner,
+            language = updatedSnippet.language,
+            extension = updatedSnippet.extension,
+            version = updatedSnippet.version,
+            content = updatedSnippet.content,
+            compliance = updatedSnippet.status,
+            lintCount = warnings.size,
+            isValid = success,
+            warnings = warnings,
+        )
+    }
+
+    private fun callLinterService(
+        token: String,
+        version: String,
+        content: String,
+        rulesMap: Map<String, Any?>,
+    ): List<String> {
+        val url = "$runnerServiceUrl/v1/lint"
+
+        try {
+            val headers =
+                HttpHeaders().apply {
+                    contentType = MediaType.APPLICATION_JSON
+                    set("Authorization", token)
+                }
+
+            val body =
+                mapOf(
+                    "version" to version,
+                    "code" to content,
+                    "rules" to rulesMap,
+                )
+
+            val entity = HttpEntity(body, headers)
+
+            val response =
+                restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    object : ParameterizedTypeReference<List<String>>() {},
+                )
+
+            if (!response.statusCode.is2xxSuccessful) {
+                throw RuntimeException("Linter service error: ${response.statusCode}")
+            }
+
+            return response.body ?: emptyList()
+        } catch (e: org.springframework.web.client.ResourceAccessException) {
+            throw RuntimeException("Cannot connect to linter service at $url: ${e.message}", e)
+        } catch (e: org.springframework.web.client.HttpClientErrorException) {
+            val errorMessage = e.responseBodyAsString
+            throw RuntimeException("Linter service HTTP error (${e.statusCode}): $errorMessage", e)
+        } catch (e: org.springframework.web.client.HttpServerErrorException) {
+            throw RuntimeException("Linter service server error (${e.statusCode}): ${e.responseBodyAsString}", e)
+        } catch (e: Exception) {
+            throw RuntimeException("Error calling linter service: ${e.message}", e)
+        }
+    }
+
+    /**
      * Guarda resultado de formato (usado por workers asíncronos).
      */
     fun saveFormatResult(
@@ -492,15 +585,22 @@ class RulesService(
         assetService.put("lint-warnings", snippetId, lintWarnings)
     }
 
-    private fun getDefaultRules(version: String): List<Rule> {
-        return formatterRulesFactory.getAvailableRules(version)
+    private fun getDefaultRules(
+        type: RulesType,
+        version: String,
+    ): List<Rule> {
+        return when (type) {
+            RulesType.FORMATTER -> formatterRulesFactory.getAvailableRules(version)
+            RulesType.LINTER -> linterRulesFactory.getAvailableRules(version)
+        }
     }
 
     private fun getRulesFromState(
         rulesState: FormatterRulesState,
         version: String,
+        type: RulesType,
     ): List<Rule> {
-        val defaultRules = getDefaultRules(version)
+        val defaultRules = getDefaultRules(type, version)
         val enabledIds = rulesState.enabledJson.toSet()
         val optionsMap = rulesState.optionsJson ?: emptyMap()
 
@@ -514,6 +614,25 @@ class RulesService(
                 isActive = isActive,
                 value = value,
             )
+        }
+    }
+
+    private fun persistRulesToAsset(
+        type: RulesType,
+        userId: String,
+        rules: List<Rule>,
+    ) {
+        val rulesJson = objectMapper.writeValueAsString(rules)
+        val userIdLong = userId.hashCode().toLong().and(0x7FFFFFFF)
+        val bucket =
+            when (type) {
+                RulesType.FORMATTER -> "format-rules"
+                RulesType.LINTER -> "lint-rules"
+            }
+        try {
+            assetService.put(bucket, userIdLong, rulesJson)
+        } catch (e: Exception) {
+            println("Error saving $bucket to asset service: ${e.message}")
         }
     }
 }
