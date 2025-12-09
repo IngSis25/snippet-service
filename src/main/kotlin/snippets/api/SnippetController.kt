@@ -281,4 +281,13 @@ class SnippetController(
             ),
         )
     }
+
+    /**
+     * Endpoint de prueba para testing de New Relic.
+     * Devuelve un error HTTP 500 para poder disparar alertas.
+     */
+    @GetMapping("/test-error")
+    fun testError(): ResponseEntity<Map<String, String>> {
+        throw RuntimeException("Error simulado para testing de New Relic - HTTP 500")
+    }
 }
