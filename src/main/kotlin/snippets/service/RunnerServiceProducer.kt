@@ -12,9 +12,9 @@ interface RunnerServiceProducer {
     fun publishSnippetEvent(snippetMessage: SnippetMessage)
 
     fun publishTestEvent(testMessage: TestMessage)
-    
+
     fun publishFormatEvent(snippetMessage: SnippetMessage)
-    
+
     fun publishLintEvent(snippetMessage: SnippetMessage)
 }
 

@@ -5,4 +5,3 @@ enum class RulesType {
     LINTER,
     // Agregar más tipos según sea necesario
 }
-

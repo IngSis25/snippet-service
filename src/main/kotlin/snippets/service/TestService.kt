@@ -1,5 +1,8 @@
 package snippets.service
 
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.springframework.stereotype.Service
 import snippets.config.TestMessage
 import snippets.dto.response.TestDTO
@@ -8,13 +11,25 @@ import snippets.errors.TestNotFound
 import snippets.model.Test
 import snippets.repositories.SnippetRepository
 import snippets.repositories.TestRepository
+import java.time.Duration
+import java.time.Instant
+
+data class TestResult(
+    val testId: Long,
+    val status: String,
+    val errors: List<String>,
+    val executedAt: Instant,
+)
 
 @Service
 class TestService(
     private val testRepository: TestRepository,
     private val snippetRepository: SnippetRepository,
     private val runnerServiceProducer: RunnerServiceProducer,
+    private val assetService: AssetService,
 ) {
+    private val objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
+
     fun getTestsBySnippetId(snippetId: Long): List<Test> {
         return testRepository.findBySnippetId(snippetId)
     }
@@ -65,6 +80,43 @@ class TestService(
                 outputs = test.output,
             ),
         )
+    }
+
+    fun getTestResult(
+        testId: Long,
+        snippetId: Long,
+        maxWaitSeconds: Int = 10,
+    ): String {
+        val startTime = Instant.now()
+        val maxWait = Duration.ofSeconds(maxWaitSeconds.toLong())
+
+        while (Duration.between(startTime, Instant.now()) < maxWait) {
+            try {
+                val resultsJson = assetService.get("test-results", snippetId)
+                // Verificar que la respuesta sea válida (no vacía, no mensaje de error)
+                if (resultsJson.isNotBlank() &&
+                    resultsJson != "[]" &&
+                    !resultsJson.contains("not found") &&
+                    !resultsJson.contains("Search in")
+                ) {
+                    val results: List<TestResult> =
+                        objectMapper.readValue(
+                            resultsJson,
+                            object : TypeReference<List<TestResult>>() {},
+                        )
+                    val testResult = results.find { it.testId == testId }
+                    if (testResult != null) {
+                        return if (testResult.status == "PASSED") "success" else "fail"
+                    }
+                }
+            } catch (e: Exception) {
+                // Continuar intentando - el resultado aún no está disponible
+            }
+            Thread.sleep(500) // Esperar 500ms antes de intentar de nuevo
+        }
+
+        // Si no se encontró el resultado después del timeout, retornar fail
+        return "fail"
     }
 
     fun executeAllSnippetTests(

@@ -7,5 +7,6 @@ data class SnippetRequest(
     val languageId: String? = null,
     val language: String? = null,
     val extension: String? = null,
+    val version: String? = null,
     val owner: String,
 )

@@ -8,7 +8,10 @@ import java.util.UUID
 
 @Repository
 interface FormatterRulesStateRepository : JpaRepository<FormatterRulesState, UUID> {
-    fun findByTypeAndOwnerId(type: RulesType, ownerId: String?): FormatterRulesState?
+    fun findByTypeAndOwnerId(
+        type: RulesType,
+        ownerId: String?,
+    ): FormatterRulesState?
+
     fun findByTypeAndOwnerIdIsNull(type: RulesType): FormatterRulesState?
 }
-

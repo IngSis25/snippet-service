@@ -92,15 +92,23 @@ class SnippetController(
         // Resolver languageId si no viene directamente
         val languageId =
             snippetRequest.languageId ?: run {
-                println("languageId no vino en el request, intentando resolver por nombre o extensión...")
+                println("languageId no vino en el request, intentando resolver por nombre+versión o extensión...")
 
                 val language =
                     when {
+                        // Prioridad 1: Buscar por nombre Y versión (más específico)
+                        !snippetRequest.language.isNullOrBlank() && !snippetRequest.version.isNullOrBlank() -> {
+                            println("Buscando lenguaje por nombre: '${snippetRequest.language}' y versión: '${snippetRequest.version}'")
+                            languageService.getLanguageByNameAndVersion(snippetRequest.language, snippetRequest.version)
+                                ?: throw LanguageNotFound("Language with name '${snippetRequest.language}' and version '${snippetRequest.version}' not found")
+                        }
+                        // Prioridad 2: Buscar solo por nombre (puede fallar si hay múltiples versiones)
                         !snippetRequest.language.isNullOrBlank() -> {
-                            println("Buscando lenguaje por nombre: '${snippetRequest.language}'")
+                            println("Buscando lenguaje por nombre: '${snippetRequest.language}' (sin versión)")
                             languageService.getLanguageByName(snippetRequest.language)
                                 ?: throw LanguageNotFound("Language with name '${snippetRequest.language}' not found")
                         }
+                        // Prioridad 3: Buscar por extensión
                         !snippetRequest.extension.isNullOrBlank() -> {
                             println("Buscando lenguaje por extension: '${snippetRequest.extension}'")
                             languageService.getLanguageByExtension(snippetRequest.extension)
@@ -109,11 +117,11 @@ class SnippetController(
                                 )
                         }
                         else -> {
-                            throw LanguageNotFound("Either languageId, language, or extension must be provided")
+                            throw LanguageNotFound("Either languageId, language+version, or extension must be provided")
                         }
                     }
 
-                println("Lenguaje encontrado: id=${language.id}, name=${language.name}, ext=${language.extension}")
+                println("Lenguaje encontrado: id=${language.id}, name=${language.name}, version=${language.version}, ext=${language.extension}")
                 language.id.toString()
             }
 

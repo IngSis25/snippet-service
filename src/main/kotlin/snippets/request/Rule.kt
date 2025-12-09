@@ -8,4 +8,3 @@ data class Rule(
     @JsonProperty("isActive") val isActive: Boolean = false,
     @JsonProperty("value") val value: Any? = null,
 )
-

@@ -72,24 +72,38 @@ class SnippetService(
         val warningsJson: String =
             try {
                 if (assetService.exists("lint-warnings", snippet.id)) {
-                    assetService.get("lint-warnings", snippet.id)
+                    val json = assetService.get("lint-warnings", snippet.id)
+                    if (json.isNotBlank() && json != "[]" && json != "Search in lint-warnings not found") {
+                        json
+                    } else {
+                        ""
+                    }
                 } else {
                     ""
                 }
             } catch (e: Exception) {
-                println("Error fetching warnings for snippet ${snippet.id}: ${e.message}")
+                // No hay warnings o el asset no existe - esto es normal, no loguear como error
                 ""
             }
 
         val warnings =
-            try {
-                jacksonObjectMapper().readValue<List<String>>(
-                    warningsJson,
-                    object : TypeReference<List<String>>() {},
-                )
-            } catch (e: Exception) {
-                println("Error deserializing warnings for snippet ${snippet.id}: ${e.message}")
+            if (warningsJson.isBlank()) {
                 emptyList<String>()
+            } else {
+                try {
+                    jacksonObjectMapper().readValue<List<String>>(
+                        warningsJson,
+                        object : TypeReference<List<String>>() {},
+                    )
+                } catch (e: Exception) {
+                    // JSON inválido o vacío - solo loguear si realmente hay contenido pero está mal formado
+                    if (warningsJson.isNotBlank() && warningsJson != "[]") {
+                        println(
+                            "Error deserializing warnings for snippet ${snippet.id}: ${e.message} (content: $warningsJson)",
+                        )
+                    }
+                    emptyList<String>()
+                }
             }
 
         return FullSnippet(snippet, content, warnings)
@@ -120,24 +134,38 @@ class SnippetService(
                 val warningsJson: String =
                     try {
                         if (assetService.exists("lint-warnings", snippet.id)) {
-                            assetService.get("lint-warnings", snippet.id)
+                            val json = assetService.get("lint-warnings", snippet.id)
+                            if (json.isNotBlank() && json != "[]" && json != "Search in lint-warnings not found") {
+                                json
+                            } else {
+                                ""
+                            }
                         } else {
                             ""
                         }
                     } catch (e: Exception) {
-                        println("Error fetching warnings for snippet ${snippet.id}: ${e.message}")
+                        // No hay warnings o el asset no existe - esto es normal, no loguear como error
                         ""
                     }
 
                 val warnings =
-                    try {
-                        jacksonObjectMapper().readValue<List<String>>(
-                            warningsJson,
-                            object : TypeReference<List<String>>() {},
-                        )
-                    } catch (e: Exception) {
-                        println("Error deserializing warnings for snippet ${snippet.id}: ${e.message}")
+                    if (warningsJson.isBlank()) {
                         emptyList<String>()
+                    } else {
+                        try {
+                            jacksonObjectMapper().readValue<List<String>>(
+                                warningsJson,
+                                object : TypeReference<List<String>>() {},
+                            )
+                        } catch (e: Exception) {
+                            // JSON inválido o vacío - solo loguear si realmente hay contenido pero está mal formado
+                            if (warningsJson.isNotBlank() && warningsJson != "[]") {
+                                println(
+                                    "Error deserializing warnings for snippet ${snippet.id}: ${e.message} (content: $warningsJson)",
+                                )
+                            }
+                            emptyList<String>()
+                        }
                     }
 
                 SnippetWithRoleAndWarnings(
