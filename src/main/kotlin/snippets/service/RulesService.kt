@@ -352,7 +352,7 @@ class RulesService(
                 boolValue
             }
             null -> {
-                // Para reglas booleanas, si no hay valor, asumimos true (la regla está activa)
+                // Para reglas booleanas, si está activa pero sin valor, asumir true
                 println("Normalized $ruleName: null -> true (Boolean, default)")
                 true
             }
