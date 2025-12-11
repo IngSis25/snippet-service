@@ -121,4 +121,36 @@ class AssetServiceTest {
         // Then
         assert(result == false)
     }
+
+    @Test
+    fun `get should return empty array when response is null`() {
+        // Given
+        val directory = "snippets"
+        val id = 1L
+
+        whenever(restTemplate.getForObject(any<String>(), any<Class<*>>()))
+            .thenReturn(null)
+
+        // When
+        val result = assetService.get(directory, id)
+
+        // Then
+        assert(result == "[]")
+    }
+
+    @Test
+    fun `get should return empty array when response is blank`() {
+        // Given
+        val directory = "snippets"
+        val id = 1L
+
+        whenever(restTemplate.getForObject(any<String>(), any<Class<*>>()))
+            .thenReturn("")
+
+        // When
+        val result = assetService.get(directory, id)
+
+        // Then
+        assert(result == "[]")
+    }
 }

@@ -224,4 +224,63 @@ class TestServiceTest {
         verify(snippetRepository).findById(snippetId)
         verify(runnerServiceProducer, never()).publishTestEvent(any<TestMessage>())
     }
+
+    @Test
+    fun `getTestResult should return success when test passed`() {
+        // Given
+        val testId = 1L
+        val snippetId = 1L
+        val resultsJson = """[{"testId":1,"status":"PASSED","errors":[],"executedAt":"2024-01-01T00:00:00Z"}]"""
+        whenever(assetService.get("test-results", snippetId)).thenReturn(resultsJson)
+
+        // When
+        val result = testService.getTestResult(testId, snippetId, maxWaitSeconds = 1)
+
+        // Then
+        result shouldBeEqualTo "success"
+        verify(assetService).get("test-results", snippetId)
+    }
+
+    @Test
+    fun `getTestResult should return fail when test failed`() {
+        // Given
+        val testId = 1L
+        val snippetId = 1L
+        val resultsJson = """[{"testId":1,"status":"FAILED","errors":["error1"],"executedAt":"2024-01-01T00:00:00Z"}]"""
+        whenever(assetService.get("test-results", snippetId)).thenReturn(resultsJson)
+
+        // When
+        val result = testService.getTestResult(testId, snippetId, maxWaitSeconds = 1)
+
+        // Then
+        result shouldBeEqualTo "fail"
+    }
+
+    @Test
+    fun `getTestResult should return fail when result not found`() {
+        // Given
+        val testId = 1L
+        val snippetId = 1L
+        whenever(assetService.get("test-results", snippetId)).thenReturn("[]")
+
+        // When
+        val result = testService.getTestResult(testId, snippetId, maxWaitSeconds = 1)
+
+        // Then
+        result shouldBeEqualTo "fail"
+    }
+
+    @Test
+    fun `getTestResult should return fail when timeout`() {
+        // Given
+        val testId = 1L
+        val snippetId = 1L
+        // No need to mock since it will timeout immediately with maxWaitSeconds = 0
+
+        // When
+        val result = testService.getTestResult(testId, snippetId, maxWaitSeconds = 0)
+
+        // Then
+        result shouldBeEqualTo "fail"
+    }
 }

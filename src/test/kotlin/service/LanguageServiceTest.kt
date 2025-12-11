@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import snippets.errors.LanguageNotFound
@@ -186,5 +187,68 @@ class LanguageServiceTest {
         result shouldBeEqualTo savedLanguage
         result.id shouldBeEqualTo 2L
         verify(languageRepository).save(newLanguage)
+    }
+
+    @Test
+    fun `getLanguageByNameAndVersion should return language when found`() {
+        // Given
+        whenever(languageRepository.findByNameIgnoreCaseAndVersion("PrintScript", "1.0"))
+            .thenReturn(Optional.of(language))
+
+        // When
+        val result = languageService.getLanguageByNameAndVersion("PrintScript", "1.0")
+
+        // Then
+        result shouldBeEqualTo language
+        verify(languageRepository).findByNameIgnoreCaseAndVersion("PrintScript", "1.0")
+    }
+
+    @Test
+    fun `getLanguageByNameAndVersion should return null when not found`() {
+        // Given
+        whenever(languageRepository.findByNameIgnoreCaseAndVersion(any(), any()))
+            .thenReturn(Optional.empty())
+
+        // When
+        val result = languageService.getLanguageByNameAndVersion("Unknown", "1.0")
+
+        // Then
+        result shouldBeEqualTo null
+    }
+
+    @Test
+    fun `getLanguageByNameAndVersion should return null when name is null`() {
+        // When
+        val result = languageService.getLanguageByNameAndVersion(null, "1.0")
+
+        // Then
+        result shouldBeEqualTo null
+    }
+
+    @Test
+    fun `getLanguageByNameAndVersion should return null when version is null`() {
+        // When
+        val result = languageService.getLanguageByNameAndVersion("PrintScript", null)
+
+        // Then
+        result shouldBeEqualTo null
+    }
+
+    @Test
+    fun `getLanguageByNameAndVersion should return null when name is blank`() {
+        // When
+        val result = languageService.getLanguageByNameAndVersion("", "1.0")
+
+        // Then
+        result shouldBeEqualTo null
+    }
+
+    @Test
+    fun `getLanguageByNameAndVersion should return null when version is blank`() {
+        // When
+        val result = languageService.getLanguageByNameAndVersion("PrintScript", "")
+
+        // Then
+        result shouldBeEqualTo null
     }
 }

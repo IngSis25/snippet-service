@@ -9,6 +9,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.redis.connection.stream.MapRecord
+import org.springframework.data.redis.connection.stream.ObjectRecord
 import org.springframework.data.redis.core.StreamOperations
 import org.springframework.data.redis.core.StringRedisTemplate
 import snippets.config.SnippetMessage
@@ -23,7 +24,8 @@ class RunnerServiceProducerTest {
     @Mock
     private lateinit var streamOperations: StreamOperations<String, String, String>
 
-    private val streamKey = "runnerStream"
+    private val runnerStreamKey = "runnerStream"
+    private val testStreamKey = "testStream"
 
     @BeforeEach
     fun setUp() {
@@ -40,7 +42,7 @@ class RunnerServiceProducerTest {
                 version = "1.0",
                 jwtToken = "test-token",
             )
-        val service = RedisRunnerServiceProducer(redisTemplate, streamKey)
+        val service = RedisRunnerServiceProducer(redisTemplate, runnerStreamKey, testStreamKey)
 
         // When
         service.publishSnippetEvent(snippetMessage)
@@ -63,10 +65,50 @@ class RunnerServiceProducerTest {
                 inputs = listOf("input1"),
                 outputs = listOf("output1"),
             )
-        val service = RedisRunnerServiceProducer(redisTemplate, streamKey)
+        val service = RedisRunnerServiceProducer(redisTemplate, runnerStreamKey, testStreamKey)
 
         // When
         service.publishTestEvent(testMessage)
+
+        // Then
+        verify(redisTemplate).opsForStream<String, String>()
+        verify(streamOperations).add(any<ObjectRecord<String, String>>())
+    }
+
+    @Test
+    fun `publishFormatEvent should publish format message to redis stream`() {
+        // Given
+        val snippetMessage =
+            SnippetMessage(
+                snippetId = 1L,
+                userId = "auth0|123",
+                version = "1.0",
+                jwtToken = "test-token",
+            )
+        val service = RedisRunnerServiceProducer(redisTemplate, runnerStreamKey, testStreamKey)
+
+        // When
+        service.publishFormatEvent(snippetMessage)
+
+        // Then
+        verify(redisTemplate).opsForStream<String, String>()
+        verify(streamOperations).add(any<MapRecord<String, String, String>>())
+    }
+
+    @Test
+    fun `publishLintEvent should publish lint message to redis stream`() {
+        // Given
+        val snippetMessage =
+            SnippetMessage(
+                snippetId = 1L,
+                userId = "auth0|123",
+                version = "1.0",
+                jwtToken = "test-token",
+            )
+        val service = RedisRunnerServiceProducer(redisTemplate, runnerStreamKey, testStreamKey)
+
+        // When
+        service.publishLintEvent(snippetMessage)
 
         // Then
         verify(redisTemplate).opsForStream<String, String>()

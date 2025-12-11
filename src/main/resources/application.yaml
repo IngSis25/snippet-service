@@ -37,8 +37,17 @@ server:
   port: 8080
 
 stream:
-  runner:
-    key: runnerStream
+  lint.key: "lintRuleStream"
+  format.key: "formatRuleStream"
+  test.key: "testStream"
+  runner.key: "runnerStream"
+
+groups:
+  lint: "lintGroup"
+  format: "formatGroup"
+  test: "testGroup"
+  runner: "runnerGroup"
+
 
 # Runner service base URL
 runner:
@@ -49,3 +58,4 @@ runner:
 auth0:
   issuer: ${AUTH_SERVER_URI}
   audience: ${AUTH_AUDIENCE}
+
