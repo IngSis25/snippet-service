@@ -49,15 +49,10 @@ class OAuth2ResourceServerSecurityConfiguration(
     fun jwtDecoder(): JwtDecoder {
         require(issuer.isNotBlank()) { "Issuer URI must not be blank" }
         require(audience.isNotBlank()) { "Audience must not be blank" }
-
-        val normalizedIssuer = issuer.trim().removeSuffix("/")
-
-        val jwtDecoder = NimbusJwtDecoder.withIssuerLocation(normalizedIssuer).build()
-
+        val jwtDecoder = NimbusJwtDecoder.withIssuerLocation(issuer).build()
         val audienceValidator: OAuth2TokenValidator<Jwt> = AudienceValidator(audience)
-        val withIssuer: OAuth2TokenValidator<Jwt> = JwtValidators.createDefaultWithIssuer(normalizedIssuer)
+        val withIssuer: OAuth2TokenValidator<Jwt> = JwtValidators.createDefaultWithIssuer(issuer)
         val withAudience: OAuth2TokenValidator<Jwt> = DelegatingOAuth2TokenValidator(withIssuer, audienceValidator)
-
         jwtDecoder.setJwtValidator(withAudience)
         return jwtDecoder
     }
