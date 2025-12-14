@@ -27,6 +27,8 @@ class OAuth2ResourceServerSecurityConfiguration(
     @Value("\${auth0.audience:}") val audience: String,
     @Value("\${spring.security.oauth2.resourceserver.jwt.issuer-uri:}") val issuer: String,
 ) {
+    private fun normalizeIssuer(issuer: String): String = issuer.trim().removeSuffix("/")
+
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http.authorizeHttpRequests {
@@ -49,10 +51,15 @@ class OAuth2ResourceServerSecurityConfiguration(
     fun jwtDecoder(): JwtDecoder {
         require(issuer.isNotBlank()) { "Issuer URI must not be blank" }
         require(audience.isNotBlank()) { "Audience must not be blank" }
-        val jwtDecoder = NimbusJwtDecoder.withIssuerLocation(issuer).build()
+
+        val normalizedIssuer = issuer.trim().removeSuffix("/")
+
+        val jwtDecoder = NimbusJwtDecoder.withIssuerLocation(normalizedIssuer).build()
+
         val audienceValidator: OAuth2TokenValidator<Jwt> = AudienceValidator(audience)
-        val withIssuer: OAuth2TokenValidator<Jwt> = JwtValidators.createDefaultWithIssuer(issuer)
+        val withIssuer: OAuth2TokenValidator<Jwt> = JwtValidators.createDefaultWithIssuer(normalizedIssuer)
         val withAudience: OAuth2TokenValidator<Jwt> = DelegatingOAuth2TokenValidator(withIssuer, audienceValidator)
+
         jwtDecoder.setJwtValidator(withAudience)
         return jwtDecoder
     }

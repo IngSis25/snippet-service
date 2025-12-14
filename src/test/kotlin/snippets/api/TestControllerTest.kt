@@ -25,6 +25,7 @@ import snippets.model.Compliance
 import snippets.model.Language
 import snippets.model.Snippet
 import snippets.service.AuthorizationServiceClient
+import snippets.service.TestRunResult
 import snippets.service.TestService
 import snippets.model.Test as TestModel
 
@@ -123,8 +124,9 @@ class TestControllerTest {
         // Given
         whenever(authorizationServiceClient.validate(any()))
             .thenReturn(ResponseEntity.ok("user123"))
-        whenever(testService.getTestById(any())).thenReturn(test)
-        whenever(testService.getTestResult(any(), any(), any())).thenReturn("success")
+        whenever(testService.runTestSync(any(), any())).thenReturn(
+            TestRunResult(status = "success", errors = emptyList()),
+        )
 
         // When/Then
         mockMvc.perform(
@@ -132,7 +134,8 @@ class TestControllerTest {
                 .header("Authorization", "Bearer token"),
         )
             .andExpect(status().isOk)
-            .andExpect(content().string("success"))
+            .andExpect(jsonPath("$.status").value("success"))
+            .andExpect(jsonPath("$.errors").isArray)
     }
 
     @Test
@@ -140,8 +143,12 @@ class TestControllerTest {
         // Given
         whenever(authorizationServiceClient.validate(any()))
             .thenReturn(ResponseEntity.ok("user123"))
-        whenever(testService.getTestById(any())).thenReturn(test)
-        whenever(testService.getTestResult(any(), any(), any())).thenReturn("fail")
+        whenever(testService.runTestSync(any(), any())).thenReturn(
+            TestRunResult(
+                status = "fail",
+                errors = listOf("At index 0 expected '2' but got '1'"),
+            ),
+        )
 
         // When/Then
         mockMvc.perform(
@@ -149,7 +156,9 @@ class TestControllerTest {
                 .header("Authorization", "Bearer token"),
         )
             .andExpect(status().isOk)
-            .andExpect(content().string("fail"))
+            .andExpect(jsonPath("$.status").value("fail"))
+            .andExpect(jsonPath("$.errors").isArray)
+            .andExpect(jsonPath("$.errors[0]").value("At index 0 expected '2' but got '1'"))
     }
 
     @Test
@@ -164,7 +173,8 @@ class TestControllerTest {
                 .header("Authorization", "Bearer invalid"),
         )
             .andExpect(status().isUnauthorized)
-            .andExpect(content().string("fail"))
+            .andExpect(jsonPath("$.status").value("fail"))
+            .andExpect(jsonPath("$.errors[0]").value("Unauthorized"))
     }
 
     @Test
@@ -172,7 +182,7 @@ class TestControllerTest {
         // Given
         whenever(authorizationServiceClient.validate(any()))
             .thenReturn(ResponseEntity.ok("user123"))
-        whenever(testService.getTestById(any())).thenThrow(RuntimeException("Error"))
+        whenever(testService.runTestSync(any(), any())).thenThrow(RuntimeException("Error"))
 
         // When/Then
         mockMvc.perform(
@@ -180,7 +190,8 @@ class TestControllerTest {
                 .header("Authorization", "Bearer token"),
         )
             .andExpect(status().isInternalServerError)
-            .andExpect(content().string("fail"))
+            .andExpect(jsonPath("$.status").value("fail"))
+            .andExpect(jsonPath("$.errors[0]").value("Error"))
     }
 
     @Test
