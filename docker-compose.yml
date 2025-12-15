@@ -33,7 +33,7 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
 
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
-      NEW_RELIC_APP_NAME: Snippet Searcher
+      NEW_RELIC_APP_NAME: ${NEW_RELIC_APP_NAME:-Snippet Searcher - DEV}
     depends_on:
       - redis
       - db
