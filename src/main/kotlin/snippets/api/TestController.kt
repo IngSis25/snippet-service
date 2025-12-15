@@ -54,24 +54,26 @@ class TestController(
     fun runTest(
         @RequestHeader("Authorization") token: String,
         @PathVariable id: Long,
-    ): ResponseEntity<String> {
+    ): ResponseEntity<Map<String, Any>> {
         val userId =
             authorizationServiceClient.validate(token).body
                 ?: return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
-                    .body("fail")
+                    .body(mapOf("status" to "fail", "errors" to listOf("Unauthorized")))
         try {
-            val test = testService.getTestById(id)
-            val snippetId = test.snippet.id
+            // Execute test synchronously using the new direct endpoint
+            // Pass the token so it can be forwarded to runner-service
+            val result = testService.runTestSync(id, token)
 
-            // Publicar el test para ejecución
-            testService.executeTest(token, id, userId)
+            val response =
+                mapOf(
+                    "status" to result.status,
+                    "errors" to result.errors,
+                )
 
-            // Esperar y obtener el resultado real del test
-            val result = testService.getTestResult(id, snippetId, maxWaitSeconds = 10)
-            return ResponseEntity.ok(result)
+            return ResponseEntity.ok(response)
         } catch (e: Exception) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("fail")
+                .body(mapOf("status" to "fail", "errors" to listOf(e.message ?: "Internal server error")))
         }
     }
 

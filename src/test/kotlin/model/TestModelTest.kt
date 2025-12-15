@@ -1,16 +1,15 @@
-package response
+package model
 
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.Test
-import snippets.dto.response.TestDTO
 import snippets.model.Compliance
 import snippets.model.Language
 import snippets.model.Snippet
 import snippets.model.Test as TestModel
 
-class TestDTOTest {
+class TestModelTest {
     @Test
-    fun `TestDTO should have all properties from test`() {
+    fun `Test should have all properties`() {
         // Given
         val language = Language(id = 1L, name = "PrintScript", version = "1.0", extension = "ps")
         val snippet =
@@ -21,6 +20,8 @@ class TestDTOTest {
                 status = Compliance.PENDING,
                 language = language,
             )
+
+        // When
         val test =
             TestModel(
                 id = 1L,
@@ -30,13 +31,23 @@ class TestDTOTest {
                 snippet = snippet,
             )
 
+        // Then
+        test.id shouldBeEqualTo 1L
+        test.name shouldBeEqualTo "Test 1"
+        test.input.size shouldBeEqualTo 2
+        test.output.size shouldBeEqualTo 1
+        test.snippet.id shouldBeEqualTo 1L
+    }
+
+    @Test
+    fun `Test should have default constructor`() {
         // When
-        val dto = TestDTO(test)
+        val test = TestModel()
 
         // Then
-        dto.id shouldBeEqualTo 1L
-        dto.name shouldBeEqualTo "Test 1"
-        dto.input.size shouldBeEqualTo 2
-        dto.output.size shouldBeEqualTo 1
+        test.id shouldBeEqualTo 0L
+        test.name shouldBeEqualTo ""
+        test.input.isEmpty() shouldBeEqualTo true
+        test.output.isEmpty() shouldBeEqualTo true
     }
 }

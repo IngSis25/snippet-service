@@ -17,6 +17,11 @@ class LanguageController(
     @GetMapping("/all")
     fun getAll(): ResponseEntity<List<Language>> {
         val languages = languageService.getAll()
+        println("===== LanguageController.getAll() =====")
+        println("Returning ${languages.size} languages:")
+        languages.forEach { lang ->
+            println("  - id=${lang.id}, name='${lang.name}', version='${lang.version}', extension='${lang.extension}'")
+        }
         return ResponseEntity.ok(languages)
     }
 

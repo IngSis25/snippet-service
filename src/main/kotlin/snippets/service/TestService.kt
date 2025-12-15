@@ -3,7 +3,13 @@ package snippets.service
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
+import org.springframework.web.client.RestTemplate
 import snippets.config.TestMessage
 import snippets.dto.response.TestDTO
 import snippets.errors.SnippetNotFound
@@ -21,12 +27,31 @@ data class TestResult(
     val executedAt: Instant,
 )
 
+data class TestExecutionRequestDTO(
+    val version: String,
+    val code: String,
+    val inputs: List<String>? = null,
+    val expectedOutputs: List<String>? = null,
+)
+
+data class TestExecutionResultDTO(
+    val status: String,
+    val errors: List<String> = emptyList(),
+)
+
+data class TestRunResult(
+    val status: String,
+    val errors: List<String> = emptyList(),
+)
+
 @Service
 class TestService(
     private val testRepository: TestRepository,
     private val snippetRepository: SnippetRepository,
     private val runnerServiceProducer: RunnerServiceProducer,
     private val assetService: AssetService,
+    private val restTemplate: RestTemplate,
+    @Value("\${runner.service.url}") private val runnerServiceUrl: String,
 ) {
     private val objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
@@ -60,6 +85,82 @@ class TestService(
         testRepository.deleteById(id)
     }
 
+    /**
+     * Execute a test synchronously using the new direct endpoint in runner-service.
+     * This method replaces the old async flow with Redis Streams and polling.
+     *
+     * @param testId the ID of the test to execute
+     * @param token the JWT token for authentication with runner-service
+     * @return TestRunResult with status ("success" or "fail") and error messages
+     */
+    fun runTestSync(
+        testId: Long,
+        token: String,
+    ): TestRunResult {
+        val test = getTestById(testId)
+        val snippet = test.snippet
+
+        // Get the snippet code from asset-service
+        val code = assetService.get("snippets", snippet.id)
+        if (code.isBlank()) {
+            return TestRunResult(
+                status = "fail",
+                errors = listOf("Snippet code is empty"),
+            )
+        }
+
+        // Prepare request for runner-service
+        val request =
+            TestExecutionRequestDTO(
+                version = snippet.language.version,
+                code = code,
+                inputs = test.input,
+                expectedOutputs = test.output,
+            )
+
+        // Call runner-service synchronously with authentication
+        val headers =
+            HttpHeaders().apply {
+                contentType = MediaType.APPLICATION_JSON
+                set("Authorization", token)
+            }
+
+        val entity = HttpEntity(request, headers)
+        val url = "$runnerServiceUrl/internal/tests/run"
+
+        try {
+            val response =
+                restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    TestExecutionResultDTO::class.java,
+                )
+
+            val result = response.body
+            if (result != null) {
+                return TestRunResult(
+                    status = if (result.status == "PASSED") "success" else "fail",
+                    errors = result.errors,
+                )
+            } else {
+                return TestRunResult(
+                    status = "fail",
+                    errors = listOf("No response from runner-service"),
+                )
+            }
+        } catch (e: Exception) {
+            return TestRunResult(
+                status = "fail",
+                errors = listOf("Error calling runner-service: ${e.message}"),
+            )
+        }
+    }
+
+    /**
+     * Execute a test asynchronously using Redis Streams (for run-all tests).
+     * This method is kept for backward compatibility and for run-all functionality.
+     */
     fun executeTest(
         token: String,
         testId: Long,
@@ -82,6 +183,10 @@ class TestService(
         )
     }
 
+    /**
+     * Get test result from asset-service (used for async flow).
+     * This method is kept for backward compatibility with run-all tests.
+     */
     fun getTestResult(
         testId: Long,
         snippetId: Long,
@@ -110,9 +215,8 @@ class TestService(
                     }
                 }
             } catch (e: Exception) {
-                // Continuar intentando - el resultado aún no está disponible
             }
-            Thread.sleep(500) // Esperar 500ms antes de intentar de nuevo
+            Thread.sleep(500)
         }
 
         // Si no se encontró el resultado después del timeout, retornar fail

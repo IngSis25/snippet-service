@@ -1,39 +1,48 @@
-package snippets.dto.response
+package response
 
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.Test
+import snippets.dto.response.SnippetWithRole
 import snippets.model.Compliance
 import snippets.model.Language
 import snippets.model.Snippet
 
 class SnippetWithRoleTest {
     @Test
-    fun `constructor should create SnippetWithRole`() {
+    fun `SnippetWithRole should have all properties from snippet and role`() {
         // Given
         val language = Language(id = 1L, name = "PrintScript", version = "1.0", extension = "ps")
         val snippet =
-            Snippet(id = 1L, name = "Test", owner = "owner@test.com", status = Compliance.SUCCESS, language = language)
-        val role = "Owner"
+            Snippet(
+                id = 1L,
+                name = "Test Snippet",
+                owner = "test@example.com",
+                status = Compliance.SUCCESS,
+                language = language,
+            )
 
         // When
-        val result = SnippetWithRole(snippet, role)
+        val dto = SnippetWithRole(snippet, "Owner")
 
         // Then
-        result.id shouldBeEqualTo 1L
-        result.name shouldBeEqualTo "Test"
-        result.role shouldBeEqualTo role
-        result.status shouldBeEqualTo Compliance.SUCCESS
-        result.language shouldBeEqualTo "PrintScript"
+        dto.id shouldBeEqualTo 1L
+        dto.name shouldBeEqualTo "Test Snippet"
+        dto.owner shouldBeEqualTo "test@example.com"
+        dto.language shouldBeEqualTo "PrintScript"
+        dto.extension shouldBeEqualTo "ps"
+        dto.version shouldBeEqualTo "1.0"
+        dto.status shouldBeEqualTo Compliance.SUCCESS
+        dto.role shouldBeEqualTo "Owner"
     }
 
     @Test
-    fun `default constructor should create empty SnippetWithRole`() {
+    fun `SnippetWithRole should have default constructor`() {
         // When
-        val result = SnippetWithRole()
+        val dto = SnippetWithRole()
 
         // Then
-        result.id shouldBeEqualTo 0L
-        result.name shouldBeEqualTo ""
-        result.role shouldBeEqualTo "Default"
+        dto.id shouldBeEqualTo 0L
+        dto.name shouldBeEqualTo ""
+        dto.role shouldBeEqualTo "Default"
     }
 }

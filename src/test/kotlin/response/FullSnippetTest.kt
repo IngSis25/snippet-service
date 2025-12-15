@@ -1,52 +1,43 @@
-package snippets.dto.response
+package response
 
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.Test
+import snippets.dto.response.FullSnippet
 import snippets.model.Compliance
 import snippets.model.Language
 import snippets.model.Snippet
 
 class FullSnippetTest {
     @Test
-    fun `constructor with snippet content and errors should create FullSnippet`() {
+    fun `FullSnippet should have all properties from snippet and content`() {
         // Given
         val language = Language(id = 1L, name = "PrintScript", version = "1.0", extension = "ps")
         val snippet =
-            Snippet(id = 1L, name = "Test", owner = "owner@test.com", status = Compliance.SUCCESS, language = language)
-        val content = "print('Hello')"
-        val errors = listOf("error1", "error2")
+            Snippet(
+                id = 1L,
+                name = "Test Snippet",
+                owner = "test@example.com",
+                status = Compliance.SUCCESS,
+                language = language,
+            )
 
         // When
-        val fullSnippet = FullSnippet(snippet, content, errors)
+        val fullSnippet = FullSnippet(snippet, "print('hello')", listOf("error1"))
 
         // Then
         fullSnippet.id shouldBeEqualTo 1L
-        fullSnippet.name shouldBeEqualTo "Test"
-        fullSnippet.content shouldBeEqualTo content
-        fullSnippet.errors shouldBeEqualTo errors
+        fullSnippet.name shouldBeEqualTo "Test Snippet"
+        fullSnippet.owner shouldBeEqualTo "test@example.com"
+        fullSnippet.language shouldBeEqualTo "PrintScript"
+        fullSnippet.extension shouldBeEqualTo "ps"
+        fullSnippet.version shouldBeEqualTo "1.0"
+        fullSnippet.content shouldBeEqualTo "print('hello')"
         fullSnippet.status shouldBeEqualTo Compliance.SUCCESS
+        fullSnippet.errors.size shouldBeEqualTo 1
     }
 
     @Test
-    fun `constructor with snippet and content should create FullSnippet with empty errors`() {
-        // Given
-        val language = Language(id = 1L, name = "PrintScript", version = "1.0", extension = "ps")
-        val snippet =
-            Snippet(id = 1L, name = "Test", owner = "owner@test.com", status = Compliance.PENDING, language = language)
-        val content = "print('Hello')"
-
-        // When
-        val fullSnippet = FullSnippet(snippet, content)
-
-        // Then
-        fullSnippet.id shouldBeEqualTo 1L
-        fullSnippet.name shouldBeEqualTo "Test"
-        fullSnippet.content shouldBeEqualTo content
-        fullSnippet.errors.isEmpty() shouldBeEqualTo true
-    }
-
-    @Test
-    fun `default constructor should create empty FullSnippet`() {
+    fun `FullSnippet should have default constructor`() {
         // When
         val fullSnippet = FullSnippet()
 
@@ -54,6 +45,27 @@ class FullSnippetTest {
         fullSnippet.id shouldBeEqualTo 0L
         fullSnippet.name shouldBeEqualTo ""
         fullSnippet.content shouldBeEqualTo ""
+        fullSnippet.errors.isEmpty() shouldBeEqualTo true
+    }
+
+    @Test
+    fun `FullSnippet should have constructor with snippet and content only`() {
+        // Given
+        val language = Language(id = 1L, name = "PrintScript", version = "1.0", extension = "ps")
+        val snippet =
+            Snippet(
+                id = 1L,
+                name = "Test",
+                owner = "user",
+                status = Compliance.PENDING,
+                language = language,
+            )
+
+        // When
+        val fullSnippet = FullSnippet(snippet, "content")
+
+        // Then
+        fullSnippet.content shouldBeEqualTo "content"
         fullSnippet.errors.isEmpty() shouldBeEqualTo true
     }
 }
