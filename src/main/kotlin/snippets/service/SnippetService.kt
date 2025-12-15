@@ -58,6 +58,16 @@ class SnippetService(
                     jwtToken = token,
                 ),
             )
+
+            // Disparar lint asíncrono para el snippet recién creado
+            runnerServiceProducer.publishLintEvent(
+                SnippetMessage(
+                    snippetId = snippet.id,
+                    userId = userId,
+                    version = snippet.language.version,
+                    jwtToken = token,
+                ),
+            )
         }
 
         return FullSnippet(snippet, content, emptyList())
@@ -221,6 +231,16 @@ class SnippetService(
         val userId = authorizationServiceClient.validate(token).body
         if (userId != null) {
             runnerServiceProducer.publishSnippetEvent(
+                SnippetMessage(
+                    snippetId = snippet.id,
+                    userId = userId,
+                    version = snippet.language.version,
+                    jwtToken = token,
+                ),
+            )
+
+            // Disparar lint asíncrono para el snippet actualizado
+            runnerServiceProducer.publishLintEvent(
                 SnippetMessage(
                     snippetId = snippet.id,
                     userId = userId,
