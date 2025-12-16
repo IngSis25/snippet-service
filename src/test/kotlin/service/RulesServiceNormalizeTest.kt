@@ -67,8 +67,6 @@ class RulesServiceNormalizeTest {
                 restTemplate,
                 "http://runner-service",
             )
-
-        whenever(authorizationServiceClient.getSnippetsOfUser(any(), any())).thenReturn(emptyList())
     }
 
     @Test

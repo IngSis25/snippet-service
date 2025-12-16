@@ -10,12 +10,13 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.http.ResponseEntity
 import org.springframework.web.client.RestTemplate
+import snippets.config.SnippetMessage
 import snippets.dto.request.Rule
 import snippets.dto.request.SaveRulesReq
+import snippets.dto.response.SnippetUserDto
 import snippets.enums.RulesType
 import snippets.factories.FormatterRulesFactory
 import snippets.factories.LinterRulesFactory
-import snippets.dto.response.SnippetUserDto
 import snippets.model.FormatterRulesState
 import snippets.model.Language
 import snippets.model.Snippet
@@ -25,7 +26,6 @@ import snippets.service.AuthorizationServiceClient
 import snippets.service.RulesService
 import snippets.service.RunnerServiceProducer
 import snippets.service.SnippetService
-import snippets.config.SnippetMessage
 
 @ExtendWith(MockitoExtension::class)
 class RulesServiceSaveTest {
@@ -76,8 +76,6 @@ class RulesServiceSaveTest {
                 restTemplate,
                 "http://runner-service",
             )
-
-        whenever(authorizationServiceClient.getSnippetsOfUser(any(), any())).thenReturn(emptyList())
     }
 
     @Test
