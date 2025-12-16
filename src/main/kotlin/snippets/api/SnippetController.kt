@@ -290,4 +290,13 @@ class SnippetController(
     fun testError(): ResponseEntity<Map<String, String>> {
         throw RuntimeException("Error simulado para testing de New Relic - HTTP 500")
     }
+
+    @GetMapping("/topo")
+    fun topo(): ResponseEntity<Map<String, String>> {
+        return ResponseEntity.ok(
+            mapOf(
+                "message" to "¡HOLA TOPO!",
+            ),
+        )
+    }
 }
