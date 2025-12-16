@@ -10,12 +10,16 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.http.ResponseEntity
 import org.springframework.web.client.RestTemplate
+import snippets.config.SnippetMessage
 import snippets.dto.request.Rule
 import snippets.dto.request.SaveRulesReq
+import snippets.dto.response.SnippetUserDto
 import snippets.enums.RulesType
 import snippets.factories.FormatterRulesFactory
 import snippets.factories.LinterRulesFactory
 import snippets.model.FormatterRulesState
+import snippets.model.Language
+import snippets.model.Snippet
 import snippets.repositories.FormatterRulesStateRepository
 import snippets.service.AssetService
 import snippets.service.AuthorizationServiceClient
@@ -197,5 +201,47 @@ class RulesServiceSaveTest {
         } catch (e: RuntimeException) {
             assert(e.message?.contains("autenticado") == true)
         }
+    }
+
+    @Test
+    fun `saveLintRules should publish lint for all user snippets`() {
+        // Given
+        val request = SaveRulesReq(rules = testRules, configText = null, configFormat = null)
+        whenever(authorizationServiceClient.validate(any()))
+            .thenReturn(ResponseEntity.ok("user123"))
+        whenever(rulesStateRepository.findByTypeAndOwnerId(any(), any())).thenReturn(null)
+        whenever(rulesStateRepository.save(any<FormatterRulesState>())).thenReturn(
+            FormatterRulesState(
+                id = null,
+                type = RulesType.LINTER,
+                ownerId = "user123",
+                enabledJson = listOf("rule1"),
+                optionsJson = emptyMap(),
+                configText = null,
+                configFormat = null,
+            ),
+        )
+        whenever(linterRulesFactory.getAvailableRules(any())).thenReturn(testRules)
+        whenever(assetService.put(any(), any(), any())).thenReturn("Asset updated")
+
+        // Snippets del usuario y su metadata
+        val language = snippets.model.Language(id = 1, name = "PrintScript", version = "1.1", extension = ".ps")
+        val snippetModel = snippets.model.Snippet(id = 10, name = "s1", owner = "user123", language = language)
+        whenever(authorizationServiceClient.getSnippetsOfUser(any(), any()))
+            .thenReturn(listOf(SnippetUserDto(snippetId = 10, role = "Owner")))
+        whenever(snippetService.get(10)).thenReturn(snippets.dto.response.FullSnippet(snippetModel, "content"))
+
+        // When
+        rulesService.saveLintRules("token", request)
+
+        // Then
+        verify(runnerServiceProducer).publishLintEvent(
+            SnippetMessage(
+                snippetId = 10,
+                userId = "user123",
+                version = "1.1",
+                jwtToken = "token",
+            ),
+        )
     }
 }

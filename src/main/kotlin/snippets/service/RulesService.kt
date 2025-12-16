@@ -142,6 +142,9 @@ class RulesService(
 
         persistRulesToAsset(RulesType.LINTER, userId, request.rules)
 
+        // Relintear todos los snippets del usuario de forma asíncrona (Redis)
+        publishLintForAllUserSnippets(userId, token)
+
         return getRulesFromState(savedState, "1.1", RulesType.LINTER) // Asumimos versión 1.1 por defecto
     }
 
@@ -246,6 +249,45 @@ class RulesService(
             else -> {
                 println("Warning: Unknown version format '$version', defaulting to '1.1'")
                 "1.1"
+            }
+        }
+    }
+
+    /**
+     * Publica un evento de lint para cada snippet del usuario en runnerStream.
+     * Se usa después de guardar/activar reglas para re-evaluar todo.
+     */
+    private fun publishLintForAllUserSnippets(
+        userId: String,
+        token: String,
+    ) {
+        val snippetRefs =
+            try {
+                authorizationServiceClient.getSnippetsOfUser(token, userId)
+            } catch (e: Exception) {
+                println("No se pudieron obtener snippets del usuario $userId para relint: ${e.message}")
+                emptyList()
+            }
+
+        if (snippetRefs.isEmpty()) {
+            println("No hay snippets para relintear para el usuario $userId")
+            return
+        }
+
+        snippetRefs.forEach { ref ->
+            try {
+                val snippet = snippetService.get(ref.snippetId)
+                val normalizedVersion = normalizeVersion(snippet.version)
+                runnerServiceProducer.publishLintEvent(
+                    snippets.config.SnippetMessage(
+                        snippetId = ref.snippetId,
+                        userId = userId,
+                        version = normalizedVersion,
+                        jwtToken = token,
+                    ),
+                )
+            } catch (e: Exception) {
+                println("Error publicando lint para snippet ${ref.snippetId}: ${e.message}")
             }
         }
     }
