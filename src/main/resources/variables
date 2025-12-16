@@ -1,0 +1,4 @@
+spring.application.name=snippet-service
+auth0.audience=https://snippet-searcher.api
+auth0.issuer=https://dev-2dc74voarsscuyp0.us.auth0.com/
+

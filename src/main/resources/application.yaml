@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: snippet-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:snippet-serviceDB}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USER:Printscript}
+    password: ${DB_PASSWORD:Ingenieria2025}
+    platform: postgres
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+
+  asset:
+    service:
+      url: http://asset-service:8080/v1/asset
+#      url: http://localhost:8081/v1/asset cuando lo corremos local
+  authorization:
+    service:
+      url: http://authorization-service:8080/api
+#       url: http://localhost:8002/api esto cuando lo corremos local
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AUTH_SERVER_URI}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+server:
+  port: 8080
+
+stream:
+  lint.key: "lintRuleStream"
+  format.key: "formatRuleStream"
+  test.key: "testStream"
+  runner.key: "runnerStream"
+
+groups:
+  lint: "lintGroup"
+  format: "formatGroup"
+  test: "testGroup"
+  runner: "runnerGroup"
+
+
+# Runner service base URL
+runner:
+  service:
+    url: ${RUNNER_SERVICE_URL:http://runner-service:8080}
+
+# Configuración de Auth0
+auth0:
+  issuer: ${AUTH_SERVER_URI}
+  audience: ${AUTH_AUDIENCE}
+

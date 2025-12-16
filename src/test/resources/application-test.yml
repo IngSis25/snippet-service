@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: sa
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # Deshabilitar seguridad en tests
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.oauth2.resourceserver.OAuth2ResourceServerAutoConfiguration
+
+  asset:
+    service:
+      url: http://localhost:8080/v1/asset
+  authorization:
+    service:
+#      url: http://localhost:8080/api
+
+stream:
+  runner:
+    key: runnerStream
+
+# Configuración de Auth0 para tests - NO configuramos estas propiedades
+# para que la configuración de seguridad no se cargue

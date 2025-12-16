@@ -25,14 +25,14 @@ tasks.named('jacocoTestReport'){
         csv.required.set(false)
     }
 }
-tasks.named('jacocoTestCoverageVerification'){
-    dependsOn(tasks.named('test'))
-    violationRules {
-        rule {
-            limit { minimum = 0.0 }
-        }
-    }
-}
+       tasks.named('jacocoTestCoverageVerification'){
+           dependsOn(tasks.named('test'))
+           violationRules {
+               rule {
+                   limit { minimum = 0.8 }
+               }
+           }
+       }
 tasks.named('check'){
     dependsOn(tasks.named('jacocoTestCoverageVerification'))
 }
@@ -79,6 +79,16 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-webflux' // is only used to be able to use WebTestClient
     testImplementation 'org.amshove.kluent:kluent:1.73' // use fluent assertions
+    testImplementation 'org.mockito.kotlin:mockito-kotlin:4.1.0' // mockito for kotlin
+
+    // Redis Streams
+    implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
+    // OAuth2 Resource Server (para validar JWT de Auth0)
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    testImplementation 'org.springframework.security:spring-security-test'
 }
 
 kotlin {
@@ -99,4 +109,12 @@ tasks.named('test') {
 
 tasks.named('check') {
     dependsOn(tasks.named('ktlintCheck'))
+}
+
+tasks.register('installGitHooks', Copy) {
+    from("$rootDir/hooks/pre-commit")
+    into("$rootDir/.git/hooks")
+}
+tasks.named('build') {
+    dependsOn 'installGitHooks'
 }
