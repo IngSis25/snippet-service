@@ -79,9 +79,14 @@ jobs:
           host: ${{ secrets.VM_HOST_PROD }}
           username: ${{ secrets.VM_USER_PROD }}
           key: ${{ secrets.VM_KEY_PROD }}
-          script:
+          script: |
+            set -e
+
             pwd
-            cd infra
-            echo ${{ secrets.GITHUB_TOKEN }} | sudo docker login -u ${{ github.actor }} --password-stdin ghcr.io
+            cd ~/infra
+
+            echo "${{ secrets.GHCR_TOKEN }}" | sudo docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
             sudo docker compose -f docker-compose.prod.yml pull snippet-service
             sudo docker compose -f docker-compose.prod.yml up -d snippet-service
+            sudo docker compose -f docker-compose.prod.yml ps
